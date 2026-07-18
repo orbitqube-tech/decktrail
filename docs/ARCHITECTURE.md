@@ -325,8 +325,8 @@ See `DECISIONS.md` D10.
 
 See `DECISIONS.md` D13.
 
-- **Host:** a configurable base host, never hardcoded. The legacy OrbitQube host is
-  retained so existing URLs keep resolving.
+- **Host:** a configurable base host, never hardcoded. Where a portal replaces an existing one,
+  the old host can be kept serving so links already sent to clients keep resolving.
 - **Owner console (readable):** `/<workspace>/<deck-slug>` and
   `/<workspace>/<deck-slug>/v<n>`. Only the owner sees these.
 - **Recipient share link (opaque):** `/d/<shareId>`, an unguessable identifier that
