@@ -15,4 +15,4 @@ account or a bot.
 
 ---
 
-- Tushar Bansal <btushar@gmail.com>  maintainer, DeckTrail CLA v1.0
+- Tushar Bansal <tushar@orbitqube.com>  maintainer, DeckTrail CLA v1.0

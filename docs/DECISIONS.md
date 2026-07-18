@@ -559,40 +559,6 @@ earns nothing.
 
 ---
 
-## D21. We launch on the DeckTrail name, with the conflict risk accepted
-
-**Decision:** Ship as **DeckTrail**, with the findings below in hand.
-
-**The risk, recorded so it is not rediscovered later:**
-
-- **DeckTrack** (`decktrack.app`), by **OctoCue Ltd** (Manchester, UK, company 12627198), has
-  been live since February 2024. It monitors presentations in real time and reports slide
-  position to a dashboard. `DeckTra-il` against `DeckTra-ck`: seven identical leading
-  characters, adjacent products in one market. Mark similarity and relatedness of goods are the
-  two prongs of a likelihood-of-confusion analysis and both point the wrong way. Their use
-  predates our launch, so priority is theirs, and UK passing off and US common-law rights
-  attach to use rather than registration. Their registration status is **unknown**.
-- **The Indian register was not searchable.** IP India is captcha-gated, as are USPTO, WIPO and
-  UK IPO direct. Only TMview answered: zero results for "decktrail" across roughly 66 offices,
-  with a validated positive control. India, our home and filing jurisdiction, is therefore
-  **unknown, not clear**. None of this was a professional clearance search.
-- **"DeckTrail" is a weak mark.** Deck plus trail is descriptive of a trail of deck activity.
-  Descriptive marks are hard to register and thin to enforce. This cuts both ways: "DeckTrack"
-  is weak for the same reason, so OctoCue's grip is probably thinner than the two-letter gap
-  suggests. But it also means our own mark is a soft foundation for D19's trademark strategy.
-  The strong open-source brands are coined or arbitrary: Grafana, Immich, MinIO, Mastodon.
-
-**The exposure scales with success.** The name is in the domain, the repo, five package names,
-the CLI binary, the attribution mark in every rendered deck, and every fork. A forced rename
-gets more expensive every week after launch, and it was cheapest before it.
-
-**If this is ever revisited,** the options that were on the table were: a paid clearance search
-in India, US and UK before launch; a coined replacement name; or filing TM-A in India and
-launching anyway. Filing is not clearing: an Indian examiner will not cite a UK common-law
-user, so an application can sail through while OctoCue retains the ability to object.
-
----
-
 ## D22. DeckTrail moves under OrbitQube Technologies Private Limited
 
 **Decision:** DeckTrail's IP sits under **OrbitQube Technologies Private Limited**. `CLA.md`
