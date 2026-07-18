@@ -197,6 +197,11 @@ and [Sending and tracking](04-sending-and-tracking.md), pointing `--portal` at
 `https://decks.your-domain.com`. To ship a client a single grouped link for a whole engagement,
 publish each artifact, then push the pack: see [the engagement hub](04-sending-and-tracking.md#send-a-whole-engagement-as-one-link).
 
+Generate and edit decks on your own machine, never on this server: generation uses your local
+`claude` login, and the server only receives the finished decks over HTTPS. Do not install or log
+in the `claude` CLI here. This keeps your model login on the one machine you control and the
+server model-free. See [Build locally, host remotely](04-sending-and-tracking.md#build-locally-host-remotely).
+
 ## Rollback
 
 Bring the stack down with the same files you started it with, so Compose knows about every
