@@ -1,7 +1,8 @@
-import type { Deck, DocumentArtifact, Tool, Theme, WatermarkConfig } from "@decktrail/ir";
+import type { Deck, DocumentArtifact, Tool, Pack, Theme, WatermarkConfig } from "@decktrail/ir";
 import { renderStandalone, type StandaloneOptions } from "./index.js";
 import { renderDocument, type DocumentOptions } from "./document.js";
 import { renderTool, type ToolOptions } from "./tool.js";
+import { renderHub, type HubOptions } from "./hub.js";
 import { watermarkText } from "./watermark.js";
 
 /** Who is viewing, for the per-viewer watermark. */
@@ -61,6 +62,28 @@ export function renderPortalTool(
   return renderTool(tool, theme, {
     ...opts,
     presenter: false,
+    watermark: { text, opacity: config.opacity },
+    protect: true,
+  });
+}
+
+/**
+ * Serve a pack's hub through the portal: the grouped, card-based index of a client engagement,
+ * with the per-viewer watermark and anti-copy friction. The tile links are supplied by the
+ * caller (content.ts), which resolves, for this recipient, the share link of each artifact in
+ * the pack, so a client navigates only their own gated artifacts. A slug with no resolved share
+ * link is dropped, never linked to an ungated path.
+ */
+export function renderPortalHub(
+  pack: Pack,
+  theme: Theme,
+  config: WatermarkConfig,
+  viewer: Viewer,
+  opts: HubOptions = {},
+): string {
+  const text = watermarkText(config, { recipient: viewer.recipient, timestamp: viewer.timestamp, label: config.label });
+  return renderHub(pack, theme, {
+    ...opts,
     watermark: { text, opacity: config.opacity },
     protect: true,
   });

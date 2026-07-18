@@ -52,6 +52,36 @@ configurable; see [Configuration](05-configuration.md).
 
 ---
 
+## Send a whole engagement as one link
+
+A client engagement is usually more than one deck: a technical proposal, a commercial proposal
+(a pricing tool), perhaps a document. You can group them behind one branded landing, the hub, and
+send the client a single link.
+
+1. **Publish each artifact first** (without a recipient), so the pack can reference them by slug:
+
+   ```sh
+   decktrail push technical.deck.json  --portal <url> --token "$TOKEN"
+   decktrail push commercial.tool.json --portal <url> --token "$TOKEN"
+   ```
+
+2. **Write a `pack.json` manifest** listing them by slug (see [Writing a deck](02-writing-decks.md)
+   and `examples/acme.pack.json`).
+
+3. **Share the pack in one command:**
+
+   ```sh
+   decktrail push acme.pack.json --portal <url> --token "$TOKEN" --recipient client@acme.example
+   ```
+
+   This mints, for that person, the hub link plus a gated share for each artifact, and prints the
+   hub URL.
+
+The client opens that one link, signs in once, and lands on their branded index. Each card opens a
+gated, watermarked artifact, and every open is tracked. The hub is gated to the recipient exactly
+like an artifact: a forwarded hub link opens for nobody else, and it never shows an artifact the
+recipient was not shared.
+
 ## What you see afterwards
 
 Sign in to `/admin` as the owner. The dashboard answers "who read what, and how far":

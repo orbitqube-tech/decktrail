@@ -19,7 +19,7 @@ export { htmlDocument, type PageParts } from "./page.js";
 export { renderDocument, documentCss, type DocumentOptions } from "./document.js";
 export { renderTool, toolCss, type ToolOptions } from "./tool.js";
 export { renderHub, type HubOptions } from "./hub.js";
-export { renderPortalDeck, renderPortalDocument, renderPortalTool, type Viewer } from "./portal.js";
+export { renderPortalDeck, renderPortalDocument, renderPortalTool, renderPortalHub, type Viewer } from "./portal.js";
 export {
   watermarkText,
   watermarkCss,

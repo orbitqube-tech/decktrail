@@ -79,7 +79,7 @@ never reaches the portal or us.
 Most specific first:
 
 1. `--voice <file>`
-2. `voice.json` beside your content
+2. `voice.json` in the directory you run the command from
 3. **The console's voice**, if you pass `--portal` and `--token`
 4. A neutral professional default
 

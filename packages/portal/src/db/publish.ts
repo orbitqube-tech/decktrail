@@ -1,4 +1,5 @@
 import { and, eq, desc } from "drizzle-orm";
+import { Pack } from "@decktrail/ir";
 import type { Db } from "./client.js";
 import { artifacts, deckVersions, shares, invites } from "./schema.js";
 import { randomToken } from "../crypto.js";
@@ -71,6 +72,20 @@ export class DrizzlePublisher implements Publisher {
       .limit(1))[0];
     if (!invited) {
       await this.db.insert(invites).values({ id: `inv_${randomToken(9)}`, workspace: input.workspace, email: input.recipient });
+    }
+
+    // Sharing a pack mints the whole engagement in one call: the hub share above, plus a share
+    // for each artifact the pack references, all to the same recipient. The hub the recipient
+    // opens (content.ts) then links each tile to that recipient's own artifact share. A
+    // referenced artifact that is not published yet simply gets no share and is dropped from the
+    // hub, rather than blocking the rest.
+    if (art.kind === "pack") {
+      const parsed = Pack.safeParse(ver.ir);
+      if (parsed.success) {
+        for (const ref of parsed.data.artifacts) {
+          await this.createShare({ workspace: input.workspace, slug: ref.slug, recipient: input.recipient });
+        }
+      }
     }
 
     return { shareId };

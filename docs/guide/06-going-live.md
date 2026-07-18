@@ -90,4 +90,4 @@ on the server and never goes into version control.
 ---
 
 <!-- guide-nav -->
-**The guide:** [← Configuration](05-configuration.md) · [All docs](../README.md) · [Troubleshooting →](07-troubleshooting.md)
+**The guide:** [← Configuration](05-configuration.md) · [All docs](../README.md) · [Setting it up on your own server →](08-server-setup.md)

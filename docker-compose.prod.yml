@@ -1,0 +1,32 @@
+# Production overlay: a Caddy reverse proxy with automatic HTTPS in front of the portal.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Set DT_BASE_HOST in .env to your public host (for example decks.your-domain.com), point that
+# host's DNS at this server, and open ports 80 and 443. Caddy obtains and renews a Let's Encrypt
+# certificate automatically. The portal itself is never published to the public interface; Caddy
+# reaches it over the internal network as portal:3000. See docs/guide/08-server-setup.md.
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - portal
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DT_BASE_HOST: ${DT_BASE_HOST:?set DT_BASE_HOST in .env to your public host}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+
+volumes:
+  caddy_data:
+  caddy_config:

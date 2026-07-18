@@ -23,7 +23,7 @@ decktrail generate notes.md --client acme --out deck.json
 
 - `notes.md` is any prose: a brief, meeting notes, an existing document's text.
 - `--client acme` sets the workspace (the client this deck is for). See [workspaces](#workspaces).
-- The voice comes from, in order: `--voice voice.json`, a `voice.json` beside the content, or
+- The voice comes from, in order: `--voice voice.json`, a `voice.json` in the directory you run the command from, or
   the voice saved in your console (pass `--portal <url> --token <token>` to read it). With none
   of those, a neutral default. See [Your brand and your voice](03-brand-and-voice.md).
 
@@ -112,10 +112,22 @@ Use SVG for anything visual.
 ## More than slides: packs, documents, hubs, tools
 
 A client engagement is often more than one deck. The IR models this as a **pack**: a workspace
-that holds one or more **artifacts**, where an artifact is a slide deck, a scrolling **document**
-(long-form prose sections), a **hub** (an auto-generated index tying the pack together), or an
-interactive **pricing tool** (a live-editable commercials table). See [the IR spec](../IR-SPEC.md)
-for the document blocks and the tool shape. Each publishes and shares the same way as a deck.
+that holds one or more **artifacts**:
+
+- a **slide deck** (what `decktrail generate` produces),
+- a scrolling **document** (long-form prose sections),
+- an interactive **pricing tool** (the commercial proposal, a live-editable table),
+- a **hub**: the grouped, card-based index of the engagement.
+
+**Generation produces slide decks only.** Documents, pricing tools, and the pack manifest are
+hand-authored JSON. See [the IR spec](../IR-SPEC.md) for their shapes, and these working
+references in `examples/`: `acme.deck.json`, `acme.document.json`, `acme.tool.json`, and
+`acme.pack.json`. The hub is not authored at all: it is a deterministic index of whatever the
+pack lists.
+
+Documents and tools publish, gate, watermark, and track exactly like a deck. Sharing the pack to
+a recipient turns it into their gated hub: see
+[Send a whole engagement as one link](04-sending-and-tracking.md#send-a-whole-engagement-as-one-link).
 
 ---
 

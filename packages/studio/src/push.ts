@@ -80,11 +80,13 @@ export async function publishAndShare(
   const published = await pushArtifact(portalUrl, token, ir, { theme: opts.theme, fetch: fetchImpl });
   if (!opts.recipient) return { published };
 
-  const { slug = "", workspace } = (ir ?? {}) as { slug?: string; workspace?: string };
+  // A pack has no slug of its own; its id is its slug (matches extractArtifactMeta on the
+  // portal). Every other artifact carries a slug.
+  const { slug, id, workspace } = (ir ?? {}) as { slug?: string; id?: string; workspace?: string };
   const share = await createShareLink(
     portalUrl,
     token,
-    { slug, recipient: opts.recipient, workspace },
+    { slug: slug ?? id ?? "", recipient: opts.recipient, workspace },
     fetchImpl,
   );
   return { published, share };
