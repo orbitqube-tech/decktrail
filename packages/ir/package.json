@@ -1,0 +1,25 @@
+{
+  "name": "@decktrail/ir",
+  "version": "0.0.0",
+  "private": true,
+  "description": "DeckTrail deck intermediate representation: pack, artifacts, layouts, blocks, theme, voice, as Zod schemas.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  }
+}

@@ -1,0 +1,48 @@
+# DeckTrail reference stack: one Postgres, one portal container.
+# Copy .env.example to .env and set secrets before running: docker compose up
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: decktrail
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: decktrail
+    volumes:
+      # Postgres 18+ images store data in a version-specific subdirectory and
+      # expect the mount at /var/lib/postgresql, not /var/lib/postgresql/data.
+      - dt_pg:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U decktrail -d decktrail"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  portal:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://decktrail:${POSTGRES_PASSWORD}@db:5432/decktrail
+      # Secrets are auto-generated and persisted on first boot if unset (see server.ts).
+      DT_TOKEN_SECRET: ${DT_TOKEN_SECRET:-}
+      DT_SESSION_SECRET: ${DT_SESSION_SECRET:-}
+      DT_ADMIN_TOKEN: ${DT_ADMIN_TOKEN:-}
+      DT_BASE_HOST: ${DT_BASE_HOST:-localhost:3000}
+      DT_COOKIE_SECURE: ${DT_COOKIE_SECURE:-false}
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+volumes:
+  dt_pg:

@@ -1,0 +1,41 @@
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.log
+
+# Your generation voice and your brand are yours, not this repository's.
+# voice.example.json is the neutral template; copy it rather than editing it.
+voice.json
+voice.md
+theme.json
+
+# The end-to-end run screenshots a live signed-in session: real addresses, a watermarked deck,
+# and whatever is on the dashboard. None of that belongs in a commit.
+e2e-shots/
+deck.json
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+coverage/
+tmp/
+
+# The commit-msg hook is the maintainer's: it pins the author to one identity and would reject
+# a contributor's own commits. It is installed per clone from the maintainer's rulebook, and
+# hooks are never fetched by git anyway, so shipping it would help nobody and mislead someone.
+.githooks/
+
+# Webfonts fetched by scripts/fetch-fonts.mjs at deploy or first run. Generated, and not
+# ours to redistribute in the repository: each deploy fetches its own copy.
+packages/renderers/assets/fonts/
+
+# Rendered output from trying the CLI in the repo root.
+*.deck.html
+*.deck.ir.json
+
+# The example deck renders on demand (pnpm demo). The IR beside it is the source.
+examples/*.html

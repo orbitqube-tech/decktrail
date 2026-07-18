@@ -1,0 +1,40 @@
+{
+  "name": "@decktrail/portal",
+  "version": "0.0.0",
+  "private": true,
+  "description": "DeckTrail portal: magic-link auth, gated and watermarked serving, versioning, analytics.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@decktrail/ir": "workspace:*",
+    "@decktrail/renderers": "workspace:*",
+    "@fastify/static": "^10.1.0",
+    "drizzle-orm": "^0.45.2",
+    "fastify": "^5.10.0",
+    "nodemailer": "^9.0.3",
+    "pg": "^8.22.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@types/nodemailer": "^8.0.1",
+    "@types/pg": "^8.11.10",
+    "drizzle-kit": "^0.31.10"
+  }
+}

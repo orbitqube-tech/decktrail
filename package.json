@@ -1,0 +1,26 @@
+{
+  "name": "decktrail",
+  "version": "0.0.0",
+  "private": true,
+  "description": "DeckTrail: open source, self-hosted, gated, watermarked, tracked, versioned deck sharing. By OrbitQube.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@11.5.2",
+  "scripts": {
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "fetch-fonts": "node scripts/fetch-fonts.mjs",
+    "demo": "node scripts/demo.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "playwright": "^1.61.1",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}
