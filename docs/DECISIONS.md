@@ -630,8 +630,10 @@ from waiver to consent, because s.57 rights subsist "even after the assignment" 
 waiver is widely regarded as unenforceable in India (*Amar Nath Sehgal v. Union of India*,
 Delhi HC, 2005).
 
-**Open:** the firm is **not** registered under s.58 today. Accepted, because the company
-supersedes the question. If the company slips past the public launch, register the firm first.
+**Resolved:** OrbitQube Technologies Private Limited is incorporated (its Corporate Identity
+Number is recorded in `CLA.md`), so the earlier partnership-firm registration question is moot:
+the CLA counterparty is the company from the outset, and no contribution is ever accepted under a
+firm-named agreement.
 
 ---
 
@@ -667,7 +669,7 @@ check. Nothing is protected by it; things are protected by the share's recipient
 never be scoped by one, because an id is already unique and a guessed workspace in a predicate
 can only hide a row that exists.
 
-**Cost accepted:** the generator currently writes the author's own name into `workspace` (it
-put `"orbitqube"` on OrbitQube's own deck). For a client deck it must write the client. Until
-it does, a self-hoster's decks all land in one workspace named after them, which is harmless
-but makes the grouping useless.
+**Handled by `--client`:** `decktrail generate --client <name>` writes the client into
+`workspace`, so a client deck lands under that client. Only when `--client` is omitted does the
+generator infer the sender, in which case all such decks land in one grouping, which is harmless
+but makes the per-client view useless. Always pass `--client` for a client deck.

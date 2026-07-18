@@ -14,25 +14,30 @@ Everything here is written for one of three people. Find yourself, and start the
 
 1. **[Quickstart](guide/01-quickstart.md)** Install it, set it up, send yourself a deck, then
    watch your own portal refuse to show you someone else's. Fifteen minutes, nothing assumed.
-2. **[Configuration](guide/05-configuration.md)** Every setting, which of the three places it
+2. **[Writing a deck](guide/02-writing-decks.md)** Generate from notes or write the JSON by hand,
+   the full layout library, and the other artifact kinds.
+3. **[Your brand and your voice](guide/03-brand-and-voice.md)** Make a deck look and read like
+   you, in the console or from files.
+4. **[Sending and tracking](guide/04-sending-and-tracking.md)** Publish, share to one person,
+   the watermark, and the dashboard that tells you who read what.
+5. **[Configuration](guide/05-configuration.md)** Every setting, which of the three places it
    lives in, and which one wins when two disagree.
+6. **[Going live](guide/06-going-live.md)** A real domain, real email that reaches the inbox, and
+   the abuse protection, done as a deliberate cutover with a one-command rollback.
+7. **[Troubleshooting](guide/07-troubleshooting.md)** The failure modes people actually hit, and
+   the fix for each.
 
-**Not written yet**, and listed so you know they are missing rather than that you failed to find
-them: writing decks by hand, brand and voice in depth, sending and tracking, going live, and
-troubleshooting. The Quickstart covers the path through all of them; these would go deeper. If
-you hit something the Quickstart does not answer, that is a documentation bug and worth an
-issue.
+If you hit something the guide does not answer, that is a documentation bug and worth an issue.
 
 ## Reference
 
 - **[Feature list](reference/features.md)** What exists, what is designed and not built, and
   what this deliberately refuses to do. The last two lists are the point.
 - **[CLI reference](reference/cli.md)** Every command, flag, and exit code.
+- **[HTTP API reference](reference/http-api.md)** Every route, what authorises it, and what it
+  returns.
 - **[The IR](IR-SPEC.md)** The JSON a deck actually is.
 - **[Glossary](GLOSSARY.md)** Every acronym, in plain language.
-
-The HTTP API has no page yet. Routes are readable in `packages/portal/src/app.ts`, and each one
-says what authorises it.
 
 ## Understanding the project
 
