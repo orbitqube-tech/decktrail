@@ -224,3 +224,8 @@ docker compose exec db psql -U decktrail -d decktrail \
 - [Going live](06-going-live.md) for a real domain, real mail, and what to change before
   strangers can reach it.
 - [Troubleshooting](07-troubleshooting.md) when a setting is not doing what you expect.
+
+---
+
+<!-- guide-nav -->
+**The guide:** [← Sending and tracking](04-sending-and-tracking.md) · [All docs](../README.md) · [Going live →](06-going-live.md)

@@ -90,3 +90,8 @@ That is the whole of it: a default and a request, never a rule. See
 
 - [Sending and tracking](04-sending-and-tracking.md) to share a branded deck and watch it.
 - [Configuration](05-configuration.md) for where every setting lives and which wins.
+
+---
+
+<!-- guide-nav -->
+**The guide:** [← Writing a deck](02-writing-decks.md) · [All docs](../README.md) · [Sending and tracking →](04-sending-and-tracking.md)

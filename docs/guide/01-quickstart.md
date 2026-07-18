@@ -185,3 +185,8 @@ product in one refusal.
 - [Your brand and your voice](03-brand-and-voice.md) to make it look and read like you.
 - [Going live](06-going-live.md) when you want a real domain and real email.
 - [What it cannot do](../THREAT-MODEL.md) before you trust it with a real client.
+
+---
+
+<!-- guide-nav -->
+**The guide:** [← Docs overview](../README.md) · [All docs](../README.md) · [Writing a deck →](02-writing-decks.md)

@@ -12,6 +12,24 @@ It is open source and self-hosted. You run it yourself, on your own infrastructu
 your own data. There is no SaaS in the path, no per-seat fee, and no third party between you
 and your client.
 
+## New here? Follow this path
+
+If you just cloned this, read these in order. Each one hands off to the next, so you are never
+left guessing what comes after.
+
+1. **This README** for what DeckTrail is, then the [one-command start](#quickstart) below.
+2. **[Quickstart](docs/guide/01-quickstart.md)** to a deck a client can open, in about fifteen
+   minutes.
+3. **The rest of the guide, in order:** [writing decks](docs/guide/02-writing-decks.md),
+   [your brand and voice](docs/guide/03-brand-and-voice.md),
+   [sending and tracking](docs/guide/04-sending-and-tracking.md),
+   [configuration](docs/guide/05-configuration.md), [going live](docs/guide/06-going-live.md),
+   and [troubleshooting](docs/guide/07-troubleshooting.md).
+4. **[What it cannot do](docs/THREAT-MODEL.md)** before you trust it with a real client. It is the
+   honest answer, and the reason to trust the rest.
+
+The full documentation index is [docs/README.md](docs/README.md).
+
 ## Why
 
 A deck you email sits in an inbox, gets forwarded without a trace, and pastes into a model

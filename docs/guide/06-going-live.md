@@ -86,3 +86,8 @@ on the server and never goes into version control.
 - [Configuration](05-configuration.md) for every setting and which of the three places wins.
 - [Troubleshooting](07-troubleshooting.md) for mail-in-spam and sign-in problems.
 - [What it cannot do](../THREAT-MODEL.md) before a real client, every time.
+
+---
+
+<!-- guide-nav -->
+**The guide:** [← Configuration](05-configuration.md) · [All docs](../README.md) · [Troubleshooting →](07-troubleshooting.md)

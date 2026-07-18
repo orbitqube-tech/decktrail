@@ -93,3 +93,8 @@ visible in the dashboard so you can see what was refused.
 Read the [threat model](../THREAT-MODEL.md) if the question is "should this be possible", the
 [configuration reference](05-configuration.md) if it is "where does this setting live", and open
 an issue on the [repository](https://github.com/orbitqube-tech/decktrail) otherwise.
+
+---
+
+<!-- guide-nav -->
+**The guide:** [← Going live](06-going-live.md) · [All docs](../README.md) · [What it cannot do →](../THREAT-MODEL.md)
