@@ -1,0 +1,39 @@
+# Reverse-proxy option: put DeckTrail behind Traefik instead of the bundled Caddy.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d --build
+#
+# Use this when your server already runs Traefik, or when you prefer Traefik to Caddy. It adds
+# routing labels to the portal and joins Traefik's network. It publishes no ports of its own, so
+# it never clashes with a proxy that already owns 80 and 443. Traefik terminates TLS and forwards
+# to the portal over the shared network as portal:3000.
+#
+# Do NOT also pass docker-compose.prod.yml: that starts Caddy, which would fight Traefik for
+# 80 and 443. Pick one reverse proxy, not both.
+#
+# In .env set DT_BASE_HOST to your public host, and set these to match your Traefik if they
+# differ from the defaults (which match the minimal Traefik in docs/guide/08-server-setup.md):
+#   TRAEFIK_NETWORK      the external docker network your Traefik watches   (default: proxy)
+#   TRAEFIK_ENTRYPOINT   the Traefik entrypoint bound to 443                (default: websecure)
+#   TRAEFIK_CERTRESOLVER the Traefik ACME certificate resolver to use       (default: letsencrypt)
+services:
+  portal:
+    # Keep the loopback publish from the base file for local checks; Traefik reaches the portal
+    # over the network below, not through a published port.
+    networks:
+      - default
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:-proxy}
+      - traefik.http.routers.decktrail.rule=Host(`${DT_BASE_HOST:?set DT_BASE_HOST in .env to your public host}`)
+      - traefik.http.routers.decktrail.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.decktrail.tls=true
+      - traefik.http.routers.decktrail.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      - traefik.http.services.decktrail.loadbalancer.server.port=3000
+
+networks:
+  # The network your Traefik already watches. It must exist before you start (Traefik created it,
+  # or you did with `docker network create`). DeckTrail only joins it; it never creates it.
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:-proxy}

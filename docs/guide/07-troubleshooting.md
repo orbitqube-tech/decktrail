@@ -88,6 +88,24 @@ Known AI and crawler agents are refused at the door and logged in the tripwire. 
 trust is blocked, it is matching that list; the block is by user agent, and the attempt is
 visible in the dashboard so you can see what was refused.
 
+## HTTPS and the reverse proxy
+
+**The browser (or Cloudflare) shows a 526, or an invalid-certificate error.** The reverse proxy
+in front of DeckTrail is serving a certificate the client will not trust, usually because it never
+obtained a real one. The common cause on a server that already runs a proxy: the bundled Caddy
+(`docker-compose.prod.yml`) cannot bind ports 80 and 443 because another proxy already owns them,
+so requests reach that other proxy, which has no route or certificate for your host and answers
+with its own default self-signed one. Put DeckTrail behind the proxy you already run rather than
+alongside a second one: use the Traefik option in [Setting it up on your own server](08-server-setup.md#option-b-behind-traefik).
+If you use the bundled Caddy, make sure nothing else is on 80/443, DNS points at this box, and the
+firewall opens both ports so the certificate can be issued.
+
+**Behind Traefik, the site 404s or serves the Traefik default certificate.** Traefik has no route
+for your host. Check the portal joined Traefik's network (`TRAEFIK_NETWORK` in `.env` matches the
+network Traefik watches), that `DT_BASE_HOST` is the host you are requesting, and that
+`TRAEFIK_ENTRYPOINT` and `TRAEFIK_CERTRESOLVER` name an entrypoint and an ACME resolver your
+Traefik actually defines. The certificate can take up to a minute on first start.
+
 ## Still stuck
 
 Read the [threat model](../THREAT-MODEL.md) if the question is "should this be possible", the

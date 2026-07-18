@@ -56,7 +56,7 @@ Edit `.env`:
 POSTGRES_PASSWORD=a-long-random-string        # openssl rand -base64 24
 DT_BASE_HOST=decks.your-domain.com            # your public host, no scheme
 DT_COOKIE_SECURE=true                         # cookies only over HTTPS
-DT_TRUST_PROXY_HEADER=true                    # correct here: Caddy is genuinely in front
+DT_TRUST_PROXY_HEADER=true                    # correct here: a reverse proxy is genuinely in front
 # Mail, through an authenticated service, never this box's own IP (see step 8):
 DT_SMTP_HOST=smtp.your-provider.com
 DT_SMTP_PORT=587
@@ -70,6 +70,13 @@ boot and persist in the database. Every `DT_*` value in `.env` now reaches the c
 
 ## 6. Start it, behind HTTPS
 
+DeckTrail does not terminate TLS itself: a reverse proxy sits in front of it, terminates HTTPS,
+and obtains the certificate. Pick the one that fits your server, and use exactly one.
+
+### Option A: the bundled Caddy
+
+The simplest choice on a fresh box where nothing else uses ports 80 and 443.
+
 ```sh
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
@@ -77,6 +84,78 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 This brings up Postgres, the portal (on loopback only), and Caddy, which obtains a Let's Encrypt
 certificate for `DT_BASE_HOST` automatically and forwards to the portal. Both services restart on
 reboot.
+
+### Option B: behind Traefik
+
+Choose this when your server **already runs Traefik** in front of other sites, or when you prefer
+Traefik. A proxy already owning 80 and 443 is the common case on a shared box, and the bundled
+Caddy cannot bind those ports alongside it. The `docker-compose.traefik.yml` overlay instead adds
+routing labels to the portal and joins Traefik's network; it publishes no ports of its own, so it
+never clashes with a proxy that is already there.
+
+Tell the overlay which Traefik to attach to, in `.env`:
+
+```sh
+TRAEFIK_NETWORK=proxy            # the external docker network your Traefik watches
+TRAEFIK_ENTRYPOINT=websecure     # its entrypoint bound to 443
+TRAEFIK_CERTRESOLVER=letsencrypt # an ACME certificate resolver it defines
+```
+
+**B1. You already run Traefik.** Set the three values above to match your existing Traefik, then:
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d --build
+```
+
+Traefik picks up the labels, routes `DT_BASE_HOST` to the portal, and issues the certificate with
+your resolver. Nothing else behind that Traefik is touched. Give it up to a minute to obtain the
+certificate on first start.
+
+**B2. You do not run Traefik yet.** Bring up a minimal one first. Create its network, and a
+`traefik-standalone.yml` beside the DeckTrail files:
+
+```sh
+docker network create proxy
+```
+
+```yaml
+# traefik-standalone.yml
+services:
+  traefik:
+    image: traefik:v3
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.email=you@your-domain.com
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_le:/letsencrypt
+    networks:
+      - proxy
+networks:
+  proxy:
+    external: true
+volumes:
+  traefik_le:
+```
+
+```sh
+docker compose -f traefik-standalone.yml up -d                                    # Traefik, once
+docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d --build  # then DeckTrail
+```
+
+The defaults (`proxy`, `websecure`, `letsencrypt`) already match this minimal Traefik, so no other
+`.env` change is needed. Set the ACME email to a real address you own.
 
 ## 7. Finish setup
 
@@ -120,8 +199,17 @@ publish each artifact, then push the pack: see [the engagement hub](04-sending-a
 
 ## Rollback
 
+Bring the stack down with the same files you started it with, so Compose knows about every
+service. For the Caddy option:
+
 ```sh
 docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+```
+
+For the Traefik option, swap the second file (this leaves any Traefik you run separately alone):
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.traefik.yml down
 ```
 
 Nothing outside this project is touched. Add `-v` only if you also want to drop the database.
