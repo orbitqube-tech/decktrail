@@ -97,4 +97,4 @@ an issue on the [repository](https://github.com/orbitqube-tech/decktrail) otherw
 ---
 
 <!-- guide-nav -->
-**The guide:** [← Going live](06-going-live.md) · [All docs](../README.md) · [What it cannot do →](../THREAT-MODEL.md)
+**The guide:** [← Setting it up on your own server](08-server-setup.md) · [All docs](../README.md) · [What it cannot do →](../THREAT-MODEL.md)

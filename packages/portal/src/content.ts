@@ -1,6 +1,6 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { Deck, DocumentArtifact, Tool, Theme } from "@decktrail/ir";
-import { renderPortalDeck, renderPortalDocument, renderPortalTool, fontFaceCss } from "@decktrail/renderers";
+import { Deck, DocumentArtifact, Tool, Pack, Theme } from "@decktrail/ir";
+import { renderPortalDeck, renderPortalDocument, renderPortalTool, renderPortalHub, fontFaceCss } from "@decktrail/renderers";
 import type { Db } from "./db/client.js";
 import { shares, deckVersions, artifacts, themes } from "./db/schema.js";
 import type { Viewer } from "./app.js";
@@ -87,6 +87,35 @@ export function makeResolveContent(db: Db) {
     if (doc?.success) html = renderPortalDocument(doc.data, theme, defaultWatermark, viewerCtx, opts);
     const tool = html === null ? Tool.safeParse(ver.ir) : null;
     if (tool?.success) html = renderPortalTool(tool.data, theme, defaultWatermark, viewerCtx, opts);
+
+    // A pack renders as the hub: the grouped index of this engagement. Its tiles point only at
+    // THIS recipient's own share for each artifact, resolved here. An artifact this recipient
+    // was not shared is dropped from the index entirely, so the hub never exposes a slug or an
+    // ungated path: the same recipient gate that protects a single artifact protects the index.
+    const pack = html === null ? Pack.safeParse(ver.ir) : null;
+    if (pack?.success) {
+      const links: Record<string, string> = {};
+      for (const ref of pack.data.artifacts) {
+        const refArt = (await db
+          .select()
+          .from(artifacts)
+          .where(and(eq(artifacts.workspace, pack.data.workspace), eq(artifacts.slug, ref.slug)))
+          .limit(1))[0];
+        if (!refArt) continue;
+        const refShare = (await db
+          .select()
+          .from(shares)
+          .where(and(eq(shares.artifactId, refArt.id), eq(shares.recipient, share.recipient), isNull(shares.revokedAt)))
+          .limit(1))[0];
+        if (!refShare) continue;
+        links[ref.slug] = `/d/${refShare.shareId}`;
+      }
+      const shown = { ...pack.data, artifacts: pack.data.artifacts.filter((r) => links[r.slug]) };
+      html = renderPortalHub(shown, theme, defaultWatermark, viewerCtx, {
+        ...opts,
+        linkFor: (slug: string) => links[slug] ?? "#",
+      });
+    }
 
     if (html === null) return null;
     return { html, artifactId: share.artifactId, versionId: share.versionId };

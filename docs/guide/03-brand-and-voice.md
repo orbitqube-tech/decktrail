@@ -65,7 +65,7 @@ See `voice.example.json` in the repo for the shape.
 **In the console.** The **Voice** tab stores one voice for the portal. Generation reads it when
 you pass `--portal <url> --token <token>`, so you do not need a local file.
 
-**From a file.** A `voice.json` beside your content, or an explicit `--voice voice.json`, wins
+**From a file.** A `voice.json` in the directory you run the command from, or an explicit `--voice voice.json`, wins
 over the console copy. This is handy for trying a register without changing the portal default.
 
 ```sh

@@ -1,0 +1,5 @@
+# Caddy reverse proxy for DeckTrail. The host comes from DT_BASE_HOST in .env.
+# Caddy obtains and renews HTTPS automatically once DNS points here and 80/443 are open.
+{$DT_BASE_HOST} {
+	reverse_proxy portal:3000
+}

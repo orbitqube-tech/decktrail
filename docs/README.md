@@ -22,9 +22,11 @@ Everything here is written for one of three people. Find yourself, and start the
    the watermark, and the dashboard that tells you who read what.
 5. **[Configuration](guide/05-configuration.md)** Every setting, which of the three places it
    lives in, and which one wins when two disagree.
-6. **[Going live](guide/06-going-live.md)** A real domain, real email that reaches the inbox, and
-   the abuse protection, done as a deliberate cutover with a one-command rollback.
-7. **[Troubleshooting](guide/07-troubleshooting.md)** The failure modes people actually hit, and
+6. **[Going live](guide/06-going-live.md)** What changes for real clients: a real domain, real
+   email that reaches the inbox, and the abuse protection.
+7. **[Setting it up on your own server](guide/08-server-setup.md)** The concrete VPS and Docker
+   walkthrough, step by step like the quickstart: provision, HTTPS, DNS, verify each wire, back up.
+8. **[Troubleshooting](guide/07-troubleshooting.md)** The failure modes people actually hit, and
    the fix for each.
 
 If you hit something the guide does not answer, that is a documentation bug and worth an issue.

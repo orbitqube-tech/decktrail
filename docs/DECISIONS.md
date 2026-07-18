@@ -673,3 +673,42 @@ can only hide a row that exists.
 `workspace`, so a client deck lands under that client. Only when `--client` is omitted does the
 generator infer the sender, in which case all such decks land in one grouping, which is harmless
 but makes the per-client view useless. Always pass `--client` for a client deck.
+
+---
+
+## D24. The hub is a portal-served, per-recipient gated landing
+
+**Decision:** A pack's hub (the grouped, card-based index of a client engagement) is published,
+served, and gated by the portal exactly like any other artifact, not only rendered as a local
+standalone file. Sharing a pack to a recipient mints, in one command, a hub share plus a share
+for each artifact the pack references, all to that recipient. Opening the hub link, behind the
+same passwordless sign-in and the same recipient gate as any artifact, renders a watermarked
+index whose tiles link to that recipient's own gated share for each artifact.
+
+**Why:** The pack and hub existed in the IR with a standalone renderer, but the portal did not
+recognise a pack on publish (400), had no serve branch for it (404), and had no watermarked hub
+renderer, so a client could not open a grouped, gated engagement landing. That is the natural
+completion of the pack model and the "one engagement, one link" experience a consultant needs.
+
+**What was built:**
+- `renderPortalHub` (the watermarked, anti-copy hub variant), alongside the standalone `renderHub`.
+- Publish recognises the `pack` kind (its `id` is its slug, since a pack is a manifest, not an
+  ArtifactMeta, and has no slug of its own).
+- `content.ts` gains a pack branch: it resolves, for the hub's recipient, the live share of each
+  referenced artifact, drops any the recipient was not shared, and renders the hub with tiles
+  pointing only at `/d/<shareId>` for that recipient. The recipient gate that protects a single
+  artifact protects the index; a forwarded hub link 404s for anyone else, and no slug-based or
+  ungated path is ever exposed.
+- `createShare` is pack-aware: sharing a pack mints the hub share and a share per referenced
+  artifact, to the same recipient. A referenced artifact not yet published simply gets no share
+  and is dropped from that recipient's hub.
+
+**Consequences:** the artifacts of an engagement must be published before the pack is shared, so
+the pack's slug references resolve. Generation is unchanged (decks only); the pack manifest and
+the non-deck artifacts are hand-authored JSON, and the hub is a deterministic projection of the
+pack, not an AI generation.
+
+**Verified end to end:** publish two artifacts, share the pack, open the hub as the recipient
+(watermarked, tiles resolve to the recipient's shares), click through to a gated artifact,
+unauthenticated open returns the sign-in page, and a different recipient opening the hub link
+gets the not-available page.

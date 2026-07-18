@@ -1,0 +1,3 @@
+{ "id":"acme-tool","title":"Acme commercial proposal","slug":"acme-commercials","workspace":"acme","kind":"tool",
+  "tool":"pricing","locale":{"currency":"INR"},
+  "lines":[{"description":"Discovery","offerPrice":50000},{"description":"Build","offerPrice":250000}] }

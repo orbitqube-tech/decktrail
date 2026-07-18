@@ -1,0 +1,10 @@
+{ "id":"acme-doc","title":"Acme statement of work","slug":"acme-terms","workspace":"acme","kind":"document",
+  "blocks":[
+    {"id":"b1","type":"prose-section","heading":"Scope","body":[
+      {"type":"paragraph","content":"We will build the intake, scheduling, and reporting flow."},
+      {"type":"list","items":["A short intake","A weekly schedule","A reporting dashboard"]}
+    ]},
+    {"id":"b2","type":"prose-section","heading":"Timeline","body":[
+      {"type":"paragraph","content":"Delivery in four phases over eight weeks."}
+    ]}
+  ] }

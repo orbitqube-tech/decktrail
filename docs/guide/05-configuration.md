@@ -198,7 +198,7 @@ decktrail generate notes.md --portal https://decks.you.com --token "$TOKEN"
 The voice is resolved in this order, most specific first:
 
 1. `--voice myvoice.json`, a file you named.
-2. `voice.json` sitting beside your content.
+2. `voice.json` in the directory you run the command from.
 3. **The voice you set in the console**, read from the portal. Needs `--portal` and `--token`.
 4. A neutral professional default.
 

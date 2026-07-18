@@ -1,7 +1,7 @@
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 import type { FastifyInstance, FastifyRequest } from "fastify";
-import { Deck, DocumentArtifact, Tool, Theme, Voice } from "@decktrail/ir";
+import { Deck, DocumentArtifact, Tool, Pack, Theme, Voice } from "@decktrail/ir";
 import type { Config } from "./config.js";
 import type { MagicLinkStore, SessionStore } from "./auth/stores.js";
 import { issueMagicLink, claimMagicLink } from "./auth/magiclink.js";
@@ -151,6 +151,12 @@ function extractArtifactMeta(ir: unknown): { workspace: string; slug: string; ki
     if (parsed.success) {
       return { workspace: parsed.data.workspace, slug: parsed.data.slug, kind, title: parsed.data.title };
     }
+  }
+  // A pack has no slug of its own (it is a manifest, not an ArtifactMeta), so its id is its
+  // slug. Stored as kind "pack"; served as the hub (content.ts).
+  const pack = Pack.safeParse(ir);
+  if (pack.success) {
+    return { workspace: pack.data.workspace, slug: pack.data.id, kind: "pack", title: pack.data.title };
   }
   return null;
 }

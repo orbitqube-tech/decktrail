@@ -1,0 +1,7 @@
+{ "id":"acme-engagement","workspace":"acme","title":"Acme engagement",
+  "artifacts":[
+    {"id":"a1","kind":"slide-deck","slug":"acme-proposal","title":"Technical proposal","blurb":"What we will build","audience":"Leadership"},
+    {"id":"a2","kind":"tool","slug":"acme-commercials","title":"Commercial proposal","blurb":"Costs and terms","audience":"Finance"},
+    {"id":"a3","kind":"document","slug":"acme-terms","title":"Statement of work","blurb":"Scope and timeline","audience":"Ops"}
+  ],
+  "hub":{"generated":true} }

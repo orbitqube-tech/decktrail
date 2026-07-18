@@ -1,0 +1,3 @@
+{ "id":"acme-deck","title":"Acme technical proposal","slug":"acme-proposal","workspace":"acme","kind":"slide-deck",
+  "slides":[{"id":"s1","layout":"cover","heading":"Technical proposal","sub":"For Acme"},
+            {"id":"s2","layout":"bullets","heading":"Scope","items":["Intake","Scheduling","Reporting"]}] }
