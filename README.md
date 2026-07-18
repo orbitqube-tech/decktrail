@@ -41,7 +41,7 @@ DeckTrail is a single Docker Compose stack (a Fastify portal, PostgreSQL, and a 
 console served at `/admin`).
 
 ```sh
-git clone <this repo>
+git clone https://github.com/orbitqube-tech/decktrail
 cd decktrail
 cp .env.example .env
 # Set POSTGRES_PASSWORD in .env. It is the only value you must choose.
