@@ -131,3 +131,8 @@ control: who may open a deck is decided by the share recipient, not the workspac
 - [Your brand and your voice](03-brand-and-voice.md) to make it look and read like you.
 - [Sending and tracking](04-sending-and-tracking.md) to publish it and see who reads it.
 - [The CLI reference](../reference/cli.md) for every command and flag.
+
+---
+
+<!-- guide-nav -->
+**The guide:** [← Quickstart](01-quickstart.md) · [All docs](../README.md) · [Your brand and your voice →](03-brand-and-voice.md)

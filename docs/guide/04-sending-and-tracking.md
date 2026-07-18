@@ -82,3 +82,8 @@ before you trust this with a real client; it is the honest floor, stated plainly
 
 - [Going live](06-going-live.md) to serve on a real domain with real email.
 - [Troubleshooting](07-troubleshooting.md) if a link does not arrive or a client cannot sign in.
+
+---
+
+<!-- guide-nav -->
+**The guide:** [← Your brand and your voice](03-brand-and-voice.md) · [All docs](../README.md) · [Configuration →](05-configuration.md)
