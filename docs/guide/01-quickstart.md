@@ -5,8 +5,10 @@ them, with you able to see when they read it.
 
 Everything runs on your machine. Nothing is sent anywhere.
 
-**You need:** Docker, and about 2GB free. Node 24 and pnpm only if you want to generate decks
-with AI (step 5).
+**You need:** Docker, and about 2GB free. Node 24 and pnpm as well from step 5 on, for the
+`decktrail` command line tool, whether you generate decks with AI or write them by hand.
+
+> These commands assume a Unix-style shell. On Windows, run them in WSL or Git Bash.
 
 ---
 
@@ -84,21 +86,26 @@ Open the link it prints. You are in.
 
 ## 5. Make a deck
 
-**If you have Claude Code** (a Pro or Max subscription, already logged in), DeckTrail can write
-the deck for you from your notes. It runs on your machine, on your subscription. There is no
-API key and the portal never sees your content.
+First, build the command line tool. Both ways of making a deck below use it, and so does the next
+step.
 
 ```sh
 pnpm install
 pnpm -r build
 cd packages/studio && npm link && cd ../..   # puts the decktrail CLI on your PATH
-
-decktrail generate notes.md --client acme --out deck.json
 ```
 
 > Prefer not to link it globally? Every `decktrail` command below is the same as
 > `node packages/studio/dist/cli.js`, so `node packages/studio/dist/cli.js generate ...` works
 > without the link step.
+
+**If you have Claude Code** (a Pro or Max subscription, already logged in), DeckTrail can write
+the deck for you from your notes. It runs on your machine, on your subscription. There is no
+API key and the portal never sees your content.
+
+```sh
+decktrail generate notes.md --client acme --out deck.json
+```
 
 **If you do not**, write the JSON yourself. It is not hard, and
 [Writing a deck](02-writing-decks.md) has the full shape. The smallest deck that works:
@@ -130,10 +137,19 @@ decktrail render deck.json --out preview.html   # open it and look
 
 ## 6. Send it
 
+You need your admin token. If you left `DT_ADMIN_TOKEN` empty (the default), it was generated on
+first boot and lives in the database, so read it back from there. If you set it yourself in
+`.env`, use that instead.
+
 ```sh
+TOKEN=$(docker compose exec -T db psql -U decktrail -d decktrail -tAc \
+  "select value from settings where key='adminToken'")
+# Or, if you set DT_ADMIN_TOKEN yourself in .env:
+# TOKEN=$(grep '^DT_ADMIN_TOKEN=' .env | cut -d= -f2-)
+
 decktrail push deck.json \
   --portal http://localhost:3000 \
-  --token "$(grep '^DT_ADMIN_TOKEN=' .env | cut -d= -f2-)" \
+  --token "$TOKEN" \
   --recipient user@decktrail.orbitqube
 ```
 
