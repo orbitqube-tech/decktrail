@@ -34,7 +34,7 @@ export const defaultBrandName = "DeckTrail";
  * is the fallback for anyone who would rather not use the tracker.
  */
 export const trademarkRequestUrl =
-  "https://gitlab.com/orbitqube/solutions/decktrail/-/issues/new?issuable_template=trademark-permission";
+  "https://github.com/orbitqube-tech/decktrail/issues/new?template=trademark-permission.md";
 export const trademarkFallbackEmail = "info@orbitqube.com";
 
 /** A sensible default per-viewer watermark (D14); the self-hoster overrides it. */
