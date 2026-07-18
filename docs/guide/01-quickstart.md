@@ -13,7 +13,7 @@ with AI (step 5).
 ## 1. Get it running
 
 ```sh
-git clone https://gitlab.com/orbitqube/solutions/decktrail
+git clone https://github.com/orbitqube-tech/decktrail
 cd decktrail
 cp .env.example .env
 ```

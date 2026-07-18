@@ -339,7 +339,7 @@ overrideable. No hardcoded values.
 **Decision:** The product is named **DeckTrail**. It leads
 with the tracing door (D5): the name evokes the trail of what happens to your
 content after you share it, which is attribution and traceability, never prevention. The
-canonical repository is `https://gitlab.com/orbitqube/solutions/decktrail`.
+canonical repository is `https://github.com/orbitqube-tech/decktrail`.
 
 **Consequences:**
 - The working-codename phase is over. All documents and code use DeckTrail from here.

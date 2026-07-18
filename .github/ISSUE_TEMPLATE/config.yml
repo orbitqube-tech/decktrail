@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability (private)
+    url: https://github.com/orbitqube-tech/decktrail/blob/main/SECURITY.md
+    about: Please report security issues privately, not as a public issue. SECURITY.md explains how.
+  - name: Read the threat model first
+    url: https://github.com/orbitqube-tech/decktrail/blob/main/docs/THREAT-MODEL.md
+    about: What DeckTrail does and does not protect against. Most "is this secure" questions are answered here.
