@@ -5,6 +5,25 @@ read, and reports back to you.
 
 ---
 
+## Build locally, host remotely
+
+DeckTrail splits cleanly in two, and it is worth being deliberate about it. You author, generate,
+edit, and validate decks **on your own machine**, then `push` the finished result to the portal,
+which only stores and serves it. Generation runs locally through your own Claude login (see
+[Writing a deck](02-writing-decks.md)); the portal holds no model credential and never runs one.
+
+So the operating loop is: **edit locally, `push`, repeat.** Point `--portal` at wherever the
+portal runs, `http://localhost:3000` while you develop, your public host in production. Revising a
+deck is the same loop: change it on your machine and push again for a new version (existing shares
+stay pinned to the version they were made for until you send the newer one).
+
+Do not install or log in the `claude` CLI on the server. Nothing there needs it: the server only
+receives finished decks over HTTPS. Keeping generation on your own machine keeps your model login
+on the one host you control and leaves the server model-free, which is the whole point of the
+split.
+
+---
+
 ## Publish and share
 
 ```sh

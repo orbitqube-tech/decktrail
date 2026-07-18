@@ -12,6 +12,22 @@ It is open source and self-hosted. You run it yourself, on your own infrastructu
 your own data. There is no SaaS in the path, no per-seat fee, and no third party between you
 and your client.
 
+## Two parts: the studio and the portal
+
+DeckTrail is two things, and keeping them apart is the point:
+
+- **The studio is the generator.** It runs on **your own machine**. You turn notes into a deck
+  (optionally generating with your own Claude login), edit and validate it, then `push` the
+  finished deck to a portal. It never runs on a server, and no model credential ever leaves your
+  machine.
+- **The portal is the deployment.** It runs on **your own host**, a VPS or any box with Docker,
+  and does one job: ingest finished decks and serve them gated, watermarked, and tracked. It holds
+  no model credential and never generates anything.
+
+So the day-to-day loop is **build locally, host remotely**: generate and edit on your machine,
+`push` to the portal, and it serves. You never install or log in Claude on the server, because it
+does not need it. See [Build locally, host remotely](docs/guide/04-sending-and-tracking.md#build-locally-host-remotely).
+
 ## New here? Follow this path
 
 If you just cloned this, read these in order. Each one hands off to the next, so you are never
