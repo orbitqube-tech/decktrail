@@ -1,0 +1,405 @@
+{
+  "id": "decktrail-example",
+  "title": "DeckTrail",
+  "slug": "decktrail",
+  "workspace": "decktrail",
+  "kind": "slide-deck",
+  "slides": [
+    {
+      "id": "cover",
+      "layout": "cover",
+      "heading": "They can regenerate your thinking.",
+      "sub": "Make sure it still has your name on it.",
+      "contact": "DeckTrail by OrbitQube  |  open source, self-hosted, AGPL-3.0  |  decktrail.com"
+    },
+    {
+      "id": "problem",
+      "layout": "bullets",
+      "heading": "What changed",
+      "lede": "The deck is the product. It always was. What is new is what happens after you send it.",
+      "items": [
+        "You send a proposal containing your actual thinking, which is the thing you sell.",
+        "Your client pastes it into a language model and asks for it back as an internal plan.",
+        "Your reasoning returns looking original, with your name nowhere on it.",
+        "There is no duplicate to catch. Nothing was copied. It was regenerated."
+      ]
+    },
+    {
+      "id": "gap",
+      "layout": "comparison",
+      "heading": "Every tool in this category was built for the old problem",
+      "left": {
+        "title": "What they protect against",
+        "body": "Forwarding the file. Screenshots and PDFs. Passing a link around. Downloading and re-sharing it. All of this assumes a leak means a copy, and that catching the copy is the job."
+      },
+      "right": {
+        "title": "What actually happens now",
+        "body": "A paste into a model, and your approach comes back reworded. No file ever leaves. Nothing exists to detect as a copy. The old job no longer describes the problem."
+      }
+    },
+    {
+      "id": "bet",
+      "layout": "stat-grid",
+      "heading": "So we start somewhere else",
+      "stats": [
+        {
+          "value": "Assume",
+          "label": "the regeneration will happen, because it will"
+        },
+        {
+          "value": "Trace",
+          "label": "whose copy it was, because that is what survives"
+        },
+        {
+          "value": "Prove",
+          "label": "who opened it, when, and for how long"
+        }
+      ]
+    },
+    {
+      "id": "how",
+      "layout": "card-grid",
+      "heading": "Friction, attribution, detection",
+      "columns": 3,
+      "cards": [
+        {
+          "title": "Gated to a person",
+          "tag": "01",
+          "body": "Every recipient gets their own link behind a passwordless sign-in. No shared URL. Every open ties to a named human, which is what makes everything after it possible."
+        },
+        {
+          "title": "Watermarked to them",
+          "tag": "02",
+          "body": "Their name and the timestamp are burned in at serve time, not baked into a file. A screenshot carries it. A photo of the screen carries it. A paste carries whatever text they took."
+        },
+        {
+          "title": "Tracked honestly",
+          "tag": "03",
+          "body": "Who opened it, which slides they sat on, how far they got, and every copy, print, or scrape attempt. Known AI agents get a 403 at the door."
+        }
+      ]
+    },
+    {
+      "id": "how-it-opens",
+      "layout": "flowchart",
+      "eyebrow": "What happens when they click",
+      "heading": [
+        {
+          "type": "text",
+          "text": "One link, "
+        },
+        {
+          "type": "highlight",
+          "text": "one person"
+        }
+      ],
+      "nodes": [
+        {
+          "id": "link",
+          "label": "They click your link"
+        },
+        {
+          "id": "agent",
+          "label": "A crawler?"
+        },
+        {
+          "id": "blocked",
+          "label": "403, and logged"
+        },
+        {
+          "id": "signin",
+          "label": "Your sign-in page"
+        },
+        {
+          "id": "mail",
+          "label": "A one-time link"
+        },
+        {
+          "id": "check",
+          "label": "Their deck?"
+        },
+        {
+          "id": "nothing",
+          "label": "Not available"
+        },
+        {
+          "id": "mark",
+          "label": "Watermarked to them"
+        },
+        {
+          "id": "read",
+          "label": "They read it"
+        },
+        {
+          "id": "trail",
+          "label": "You see what happened"
+        }
+      ],
+      "edges": [
+        {
+          "from": "link",
+          "to": "agent"
+        },
+        {
+          "from": "agent",
+          "to": "blocked",
+          "label": "yes"
+        },
+        {
+          "from": "agent",
+          "to": "signin",
+          "label": "no"
+        },
+        {
+          "from": "signin",
+          "to": "mail"
+        },
+        {
+          "from": "mail",
+          "to": "check"
+        },
+        {
+          "from": "check",
+          "to": "nothing",
+          "label": "no"
+        },
+        {
+          "from": "check",
+          "to": "mark",
+          "label": "yes"
+        },
+        {
+          "from": "mark",
+          "to": "read"
+        },
+        {
+          "from": "read",
+          "to": "trail"
+        }
+      ],
+      "decisions": [
+        "agent",
+        "check"
+      ],
+      "legend": [
+        "A step that always runs",
+        "A decision",
+        "Refused, and recorded"
+      ],
+      "notes": "The two diamonds are the whole security model. The crawler check runs before the sign-in check, so a scraper is refused and recorded whether or not it has a session. The second asks whether this deck is theirs: signing in proves who you are, it does not entitle you to someone else's deck."
+    },
+    {
+      "id": "who-does-what",
+      "layout": "swimlane",
+      "eyebrow": "Where the work happens",
+      "heading": [
+        {
+          "type": "text",
+          "text": "Nothing runs "
+        },
+        {
+          "type": "highlight",
+          "text": "on our infrastructure"
+        }
+      ],
+      "actors": [
+        {
+          "name": "You",
+          "dot": "#7aa2ff"
+        },
+        {
+          "name": "Your machine",
+          "dot": "#b98cff"
+        },
+        {
+          "name": "Your server",
+          "dot": "#3ddc97"
+        },
+        {
+          "name": "Your client",
+          "dot": "#ffcc66"
+        }
+      ],
+      "stages": [
+        "Write",
+        "Generate",
+        "Publish",
+        "Read",
+        "Review"
+      ],
+      "cells": [
+        {
+          "actor": "You",
+          "stage": "Write",
+          "body": "Notes, a transcript, a brief. Whatever you already have."
+        },
+        {
+          "actor": "You",
+          "stage": "Publish",
+          "body": "One command, and a link for one named person."
+        },
+        {
+          "actor": "You",
+          "stage": "Review",
+          "body": "Who opened it, how far they read, who tried to scrape it."
+        },
+        {
+          "actor": "Your machine",
+          "stage": "Generate",
+          "body": "The CLI, through your own Claude login. No API key, no per-token cost."
+        },
+        {
+          "actor": "Your machine",
+          "stage": "Publish",
+          "body": "Pushes the deck to your portal."
+        },
+        {
+          "actor": "Your server",
+          "stage": "Publish",
+          "body": "Pins a version, so republishing never changes what someone was sent."
+        },
+        {
+          "actor": "Your server",
+          "stage": "Read",
+          "body": "Gates, watermarks, and records. Per viewer, at serve time."
+        },
+        {
+          "actor": "Your server",
+          "stage": "Review",
+          "body": "Your database. Export it whenever you like."
+        },
+        {
+          "actor": "Your client",
+          "stage": "Read",
+          "body": "Signs in once, reads their own copy, carrying their own name."
+        }
+      ],
+      "legend": [
+        "You",
+        "Your machine",
+        "Your server",
+        "Your client"
+      ],
+      "notes": "There is no column for us, and that is the slide. Ask any hosted competitor to draw this and they need a fifth lane."
+    },
+    {
+      "id": "limits",
+      "layout": "table",
+      "heading": "What it cannot do",
+      "columns": [
+        "If they want to",
+        "Can we stop it?",
+        "What you get instead"
+      ],
+      "rows": [
+        [
+          "Photograph the screen",
+          "No. Never.",
+          "Their name is in the photo."
+        ],
+        [
+          "Paste the text into a model",
+          "No.",
+          "You know who had it open, and for how long."
+        ],
+        [
+          "Retype it by hand",
+          "No.",
+          "Dwell time on the slides they retyped."
+        ],
+        [
+          "Right-click, select, copy",
+          "Friction, not a wall.",
+          "The attempt is logged against their name."
+        ],
+        [
+          "Forward their link onward",
+          "Yes, meaningfully.",
+          "The link is theirs. The colleague has to ask you."
+        ],
+        [
+          "Point a scraper at it",
+          "Known ones, yes.",
+          "403 at the door, and it lands in your log."
+        ]
+      ],
+      "footnote": "This slide is the reason to trust the others."
+    },
+    {
+      "id": "honesty",
+      "layout": "bullets",
+      "heading": "Why that slide is in a sales deck",
+      "items": [
+        "Because you have been burned, and you know those first three rows are true.",
+        "A tool that claimed otherwise would be telling you something you can disprove in ten seconds.",
+        "If prevention were possible we would sell prevention. It is not, so we sell what is left.",
+        "We claim deterrence, attribution, and detection. There is no fourth thing."
+      ]
+    },
+    {
+      "id": "yours",
+      "layout": "card-grid",
+      "heading": "It is yours, not ours",
+      "columns": 3,
+      "cards": [
+        {
+          "title": "Self-hosted",
+          "body": "It runs on your server. Your clients' decks never touch our infrastructure. We could not read them if we wanted to, which is a property of where it runs rather than a promise we are asking you to believe."
+        },
+        {
+          "title": "Open source, AGPL-3.0",
+          "body": "Read every line before you trust it with a client relationship. Fork it. Change it. There is no account here and nothing to sign into."
+        },
+        {
+          "title": "Your brand, not ours",
+          "body": "Point it at your website and it reads your colours and type straight out of your stylesheet. It will not get everything: name a colour \"cyan\" and no tool can know that is your accent, so you finish the job in the console. The deck a client opens looks like you sent it, because you did."
+        }
+      ]
+    },
+    {
+      "id": "steps",
+      "layout": "steps",
+      "heading": "Running in an afternoon",
+      "steps": [
+        {
+          "label": "1",
+          "title": "Clone and compose up",
+          "body": "Postgres and one container. The setup wizard generates its own secrets on first boot."
+        },
+        {
+          "label": "2",
+          "title": "Set your brand",
+          "body": "A browser form, or point the brand extractor at your own site and let it read your colours and type."
+        },
+        {
+          "label": "3",
+          "title": "Publish a deck",
+          "body": "Write the content, push it, and DeckTrail mints a per-recipient link and invites them."
+        },
+        {
+          "label": "4",
+          "title": "Watch the trail",
+          "body": "Opens, dwell per slide, completion, and every attempt to take it with them."
+        }
+      ]
+    },
+    {
+      "id": "attribution",
+      "layout": "bullets",
+      "heading": "About the little mark in the corner",
+      "items": [
+        "Every deck carries a small \"Made with DeckTrail by OrbitQube\". The licence does not require it and you can turn it off without asking.",
+        "We drafted a licence term to make it mandatory, then read the AGPL properly and found it would not have held. So we dropped it before publishing.",
+        "We are asking instead. There is no trial funnel and no hosted tier, so a client noticing that mark is genuinely how the next person finds this.",
+        "Same standard as the last slide: better to tell you what we found than ship something that reads enforceable and is not."
+      ]
+    },
+    {
+      "id": "close",
+      "layout": "close",
+      "heading": "Your thinking is going into a model either way.",
+      "sub": "The only question is whether your name goes with it.",
+      "contact": "decktrail.com  |  gitlab.com/orbitqube/solutions/decktrail  |  orbitqube.com"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "_comment": "Copy to voice.json (or pass --voice) to steer deck generation into your own register. Add a voice.md beside it for longer, free-form guidance. With no voice file, a neutral professional default is used. Everything below describes the shape of each field rather than proposing a style: replace all of it. Your register is the point, and a tool that shipped one would give every deck built with it the same voice.",
+  "name": "My voice",
+  "audience": "Who reads your decks. Be specific: how senior, how technical, and what they already know.",
+  "tone": "How it should sound, in a few words.",
+  "forbidden": [
+    "the words and constructions you never use",
+    "one per line, and concrete enough for a model to obey",
+    "a punctuation mark you dislike, or a rhetorical turn you find cheap"
+  ],
+  "preferred": [
+    "the habits you want on every slide",
+    "concrete again: a rule you could mark someone down for breaking",
+    "a sentence length, or a thing to lead with"
+  ],
+  "locale": { "currency": "USD", "dates": "America/New_York" },
+  "instructions": "Free-form guidance, in your own words, and where a house style actually lives: the fields above cannot hold a paragraph. Say what a slide is for, what you never put in writing and save for the call, and how you handle a number, a risk, or a competitor. Write it the way you would brief a colleague about to draft for your clients.",
+  "notes": "Anything else. Appended to the prompt as written."
+}

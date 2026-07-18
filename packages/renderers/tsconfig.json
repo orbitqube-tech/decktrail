@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    // For font.ts alone, which reads the fetched webfont off the disk. It is the only module here
+    // that touches one, and no renderer calls it: they take the CSS as an option, so a render
+    // stays a function of its arguments rather than of whatever the machine has lying around.
+    "types": ["node"]
+  },
+  "include": ["src"]
+}
