@@ -91,9 +91,14 @@ API key and the portal never sees your content.
 ```sh
 pnpm install
 pnpm -r build
+cd packages/studio && npm link && cd ../..   # puts the decktrail CLI on your PATH
 
 decktrail generate notes.md --client acme --out deck.json
 ```
+
+> Prefer not to link it globally? Every `decktrail` command below is the same as
+> `node packages/studio/dist/cli.js`, so `node packages/studio/dist/cli.js generate ...` works
+> without the link step.
 
 **If you do not**, write the JSON yourself. It is not hard, and
 [Writing a deck](02-writing-decks.md) has the full shape. The smallest deck that works:

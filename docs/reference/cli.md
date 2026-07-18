@@ -5,10 +5,13 @@ to your portal. It never runs on a server, and it holds no model credentials.
 
 ```sh
 pnpm install && pnpm -r build
-node packages/studio/dist/cli.js <command>
+cd packages/studio && npm link && cd ../..   # puts `decktrail` on your PATH
+decktrail <command>
 ```
 
-Run it with no arguments for the same summary this page expands.
+The `npm link` step is optional: `decktrail` is exactly `node packages/studio/dist/cli.js`, so
+you can call that path directly without linking. Run it with no arguments for the same summary
+this page expands.
 
 ---
 
