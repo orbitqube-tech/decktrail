@@ -1,12 +1,13 @@
 # DeckTrail
 
-**Your decks, gated and traceable. Self-hosted and free.**
+**Your decks, private to each client and traceable. Self-hosted and free.**
 
-In the age of large language models, a client who receives your deck can paste it into a
-model and regenerate your thinking in house. DeckTrail is built for that reality. You turn
-your own content into a branded, gated, watermarked, tracked web deck, share it with a
-client over a one-time sign-in link, and keep a clear trail of who opened what, how deeply,
-and who tried to scrape it.
+You send a client your best thinking and, most of the time, hear nothing back. DeckTrail gives
+the work you send a home you own: a branded, gated, watermarked web deck, delivered to one named
+person over a one-time sign-in link, with a clear record of who opened it, how far they read, and
+for how long. It is built for the age of large language models, where a document you send can
+resurface anywhere, reworded and unattributed. When that happens, attribution is the part that
+still travels, so attribution is what DeckTrail gives you.
 
 It is open source and self-hosted. You run it yourself, on your own infrastructure, with
 your own data. There is no SaaS in the path, no per-seat fee, and no third party between you
