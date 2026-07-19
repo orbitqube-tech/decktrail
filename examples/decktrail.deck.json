@@ -8,33 +8,33 @@
     {
       "id": "cover",
       "layout": "cover",
-      "heading": "They can regenerate your thinking.",
-      "sub": "Make sure it still has your name on it.",
+      "heading": "You sent the deck. Now know what happened to it.",
+      "sub": "A private, branded space for each client, and a clear record of what they did with it.",
       "contact": "DeckTrail by OrbitQube  |  open source, self-hosted, AGPL-3.0  |  decktrail.com"
     },
     {
       "id": "problem",
       "layout": "bullets",
       "heading": "What changed",
-      "lede": "The deck is the product. It always was. What is new is what happens after you send it.",
+      "lede": "The deck is the product. It always was. What is new is what you can know after you send it.",
       "items": [
-        "You send a proposal containing your actual thinking, which is the thing you sell.",
-        "Your client pastes it into a language model and asks for it back as an internal plan.",
-        "Your reasoning returns looking original, with your name nowhere on it.",
-        "There is no duplicate to catch. Nothing was copied. It was regenerated."
+        "You send a proposal that carries your actual thinking, which is the thing you sell.",
+        "Most of the time you hear nothing back, and never learn whether it even landed.",
+        "In the AI era, a document you send can resurface anywhere, reworded and unattributed. That is simply how work moves now.",
+        "So the useful question is no longer only how to protect it. It is how to know what happened to it."
       ]
     },
     {
       "id": "gap",
       "layout": "comparison",
-      "heading": "Every tool in this category was built for the old problem",
+      "heading": "Built for a different question",
       "left": {
-        "title": "What they protect against",
-        "body": "Forwarding the file. Screenshots and PDFs. Passing a link around. Downloading and re-sharing it. All of this assumes a leak means a copy, and that catching the copy is the job."
+        "title": "The usual question",
+        "body": "How do we stop the file from leaving? Forwarding, screenshots, downloads, re-sharing. It is worth doing, and DeckTrail does the parts that are genuinely real."
       },
       "right": {
-        "title": "What actually happens now",
-        "body": "A paste into a model, and your approach comes back reworded. No file ever leaves. Nothing exists to detect as a copy. The old job no longer describes the problem."
+        "title": "The question we start from",
+        "body": "What actually happened to the work you sent? Who opened it, how far they read, and whose name is on it if it ever travels. That is the part you could never see before."
       }
     },
     {
@@ -43,39 +43,39 @@
       "heading": "So we start somewhere else",
       "stats": [
         {
-          "value": "Assume",
-          "label": "the regeneration will happen, because it will"
+          "value": "See",
+          "label": "what happened to the work you sent"
         },
         {
-          "value": "Trace",
-          "label": "whose copy it was, because that is what survives"
+          "value": "Attribute",
+          "label": "whose copy it is, if it ever travels"
         },
         {
-          "value": "Prove",
-          "label": "who opened it, when, and for how long"
+          "value": "Own",
+          "label": "all of it, on your server, no account but yours"
         }
       ]
     },
     {
       "id": "how",
       "layout": "card-grid",
-      "heading": "Friction, attribution, detection",
+      "heading": "Confidential, visible, yours",
       "columns": 3,
       "cards": [
         {
-          "title": "Gated to a person",
+          "title": "Gated to one person",
           "tag": "01",
-          "body": "Every recipient gets their own link behind a passwordless sign-in. No shared URL. Every open ties to a named human, which is what makes everything after it possible."
+          "body": "Every recipient gets their own link behind a passwordless sign-in. No public URL, and no anonymous forwarding. Every open ties to a named person, which is what makes everything after it possible."
         },
         {
-          "title": "Watermarked to them",
+          "title": "You see what happened",
           "tag": "02",
-          "body": "Their name and the timestamp are burned in at serve time, not baked into a file. A screenshot carries it. A photo of the screen carries it. A paste carries whatever text they took."
+          "body": "Who opened it, which parts held them, how far they read, and whether they finished. Per person and per deck, on your own dashboard, and exportable whenever you want it."
         },
         {
-          "title": "Tracked honestly",
+          "title": "Yours, in the AI era",
           "tag": "03",
-          "body": "Who opened it, which slides they sat on, how far they got, and every copy, print, or scrape attempt. Known AI agents get a 403 at the door."
+          "body": "Draft it with AI through your own Claude login. It goes out watermarked to the reader at serve time, and known AI agents are turned away at the door. Nothing ever touches our infrastructure."
         }
       ]
     },
@@ -280,14 +280,14 @@
         "Your server",
         "Your client"
       ],
-      "notes": "There is no column for us, and that is the slide. Ask any hosted competitor to draw this and they need a fifth lane."
+      "notes": "There is no column for us, and that is the slide. The work runs on your machine and your server, from writing to review, with nothing in between that belongs to anyone else."
     },
     {
       "id": "limits",
       "layout": "table",
       "heading": "What it cannot do",
       "columns": [
-        "If they want to",
+        "What can still happen",
         "Can we stop it?",
         "What you get instead"
       ],
@@ -330,10 +330,10 @@
       "layout": "bullets",
       "heading": "Why that slide is in a sales deck",
       "items": [
-        "Because you have been burned, and you know those first three rows are true.",
-        "A tool that claimed otherwise would be telling you something you can disprove in ten seconds.",
-        "If prevention were possible we would sell prevention. It is not, so we sell what is left.",
-        "We claim deterrence, attribution, and detection. There is no fourth thing."
+        "Because the first three rows are true, and you already know it.",
+        "We would rather show you the floor than let you find it with a client in the room.",
+        "If prevention were possible we would build it. It is not, so we build what is: deterrence, attribution, detection.",
+        "There is no fourth thing, and we will not pretend there is."
       ]
     },
     {
@@ -397,8 +397,8 @@
     {
       "id": "close",
       "layout": "close",
-      "heading": "Your thinking is going into a model either way.",
-      "sub": "The only question is whether your name goes with it.",
+      "heading": "Send your thinking. Then actually know what became of it.",
+      "sub": "Private to one person, yours on your own server, and honest about the rest.",
       "contact": "decktrail.com  |  github.com/orbitqube-tech/decktrail  |  orbitqube.com"
     }
   ]
