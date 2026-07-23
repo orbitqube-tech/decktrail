@@ -13,6 +13,10 @@ voice.json
 voice.md
 theme.json
 
+# Your own settings and the cached copy of your portal's voice. The settings file holds your
+# admin token, so it must never be committable, here or in any project you run the tool from.
+.decktrail/
+
 # The end-to-end run screenshots a live signed-in session: real addresses, a watermarked deck,
 # and whatever is on the dashboard. None of that belongs in a commit.
 e2e-shots/

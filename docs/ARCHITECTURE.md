@@ -13,10 +13,12 @@ describes. Check before you rely on it.
 
 **The studio.** Runs on the user's machine. A Claude Code skill plus a command line tool.
 Takes content in, produces a deck IR (intermediate representation) out, and pushes it to a
-portal. In version 1 it generates only through the user's own Claude Code login (a Claude
-Pro or Max subscription), so it holds no application programming interface (API) key, and
-the product never stores or replays the credential. Never runs on a server in version 1.
-See `DECISIONS.md` D9.
+portal. Generation itself lives in its own package behind a provider interface, and ships with
+two backends: the user's own Claude Code login (a Claude Pro or Max subscription, the default),
+and the OpenCode command line tool, which reaches a model on the user's own hardware or a free
+tier. Either way DeckTrail holds no application programming interface (API) key of its own: the
+credential, where one is needed at all, belongs to the tool being driven. Never runs on a server.
+See `DECISIONS.md` D9 and D25.
 
 **The portal.** Runs on the user's own host. Serves gated, tracked, protected decks.
 Holds no language model credentials. Small, auditable, boring, and safe.
@@ -265,7 +267,7 @@ Everything external is a swappable adapter with a common interface. Nothing is h
 |---|---|
 | Email | SMTP, Resend, Postmark, Amazon SES (simple email service) |
 | Storage | Local disk, S3, Cloudflare R2 |
-| Language model | Version 1: Claude via the user's own Claude Code login (subscription) only, per `DECISIONS.md` D9. A Claude-via-API-key adapter is deferred to a later version. |
+| Language model | Two backends behind one provider interface, per `DECISIONS.md` D9 and D25: `claude`, the user's own Claude Code login (the default, no key), and `opencode`, the OpenCode command line tool, which reaches a local model, its own free tier, or a hosted one. A direct Claude-via-API-key adapter is still deferred: OpenCode already covers that ground. |
 | Deploy | Docker Compose, Fly, Coolify, Railway |
 | Analytics (optional) | Built in, Umami plugin |
 

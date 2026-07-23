@@ -1,38 +1,6 @@
-import { spawn } from "node:child_process";
 import { Deck, type Voice } from "@decktrail/ir";
 import { buildGeneratePrompt, buildRepairPrompt } from "./prompt.js";
-
-/**
- * Run Claude in print mode using the user's own Claude Code login. This is the
- * subscription-only generation path (D9): no API key, the product never handles the
- * credential. Requires the `claude` CLI installed and logged in.
- *
- * The prompt goes in on **stdin**, not as an argument.
- *
- * It used to be `["-p", prompt]`, which puts the whole thing in one argv entry. Windows caps a
- * command line at about 32 KB and Linux at a couple of megabytes, so a long enough source
- * document simply could not be generated: four artifacts in the first real corpus were
- * hundreds of kilobytes and hit the wall. The failure is also a poor one, an opaque spawn
- * error rather than anything naming the cause. Stdin has no such limit.
- */
-export function runClaude(prompt: string, command = "claude"): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, ["-p"], { stdio: ["pipe", "pipe", "pipe"] });
-    let out = "";
-    let err = "";
-    child.stdout.on("data", (d: Buffer) => {
-      out += d.toString();
-    });
-    child.stderr.on("data", (d: Buffer) => {
-      err += d.toString();
-    });
-    child.on("error", (e) => reject(e));
-    child.on("close", (code) => (code === 0 ? resolve(out) : reject(new Error(err.trim() || `claude exited with code ${code}`))));
-    // A broken pipe here means the child died before reading; the close handler reports why.
-    child.stdin.on("error", () => {});
-    child.stdin.end(prompt);
-  });
-}
+import type { GenerationProvider } from "./provider.js";
 
 /** Extract the first complete JSON object from arbitrary model output. */
 export function extractJson(text: string): unknown {
@@ -42,19 +10,29 @@ export function extractJson(text: string): unknown {
   return JSON.parse(text.slice(start, end + 1));
 }
 
-/** How many times to hand a failed deck back for repair before giving up. */
-const REPAIR_ATTEMPTS = 2;
+/** How many times a failed deck is handed back for repair before giving up. */
+export const DEFAULT_REPAIR_ATTEMPTS = 2;
 
 export interface GenerateOptions {
+  /**
+   * Which model backend to use. Required, and deliberately so: a default buried in this library
+   * would be a value the caller could not see, and the four worst bugs this project has shipped
+   * all came from code quietly filling in a value it had no business choosing.
+   */
+  provider: GenerationProvider;
   /** Called before each repair attempt, so a slow retry can be reported rather than look hung. */
   onRetry?: (attempt: number, errors: string) => void;
-  /** How to reach the model. Defaults to the real `claude` CLI; injectable for tests. */
-  run?: (prompt: string) => Promise<string>;
+  /** How many repairs to attempt. Defaults to DEFAULT_REPAIR_ATTEMPTS. */
+  repairAttempts?: number;
+  /** Cancel the run, so an interrupt stops the backend rather than orphaning it. */
+  signal?: AbortSignal;
+  /** Each chunk the backend writes to stderr, so a caller can surface its progress. */
+  onStderr?: (chunk: string) => void;
 }
 
 /**
- * Generate a validated slide-deck IR from content, via the user's Claude Code login. An
- * optional Voice steers the register and style; without one, the neutral default is used.
+ * Generate a validated slide-deck IR from content. An optional Voice steers the register and
+ * style; without one, the neutral default is used.
  *
  * Output that does not validate is handed back with the validator's errors rather than thrown
  * away. The IR is strict and generation is one slow call, so a single bad field in slide 5 of
@@ -64,14 +42,13 @@ export interface GenerateOptions {
  */
 export async function generateDeck(
   content: string,
-  voice?: Voice,
-  client?: string,
-  opts: GenerateOptions = {},
+  voice: Voice | undefined,
+  client: string | undefined,
+  opts: GenerateOptions,
 ): Promise<Deck> {
-  // `run` is injectable for the same reason the portal's store layer is: the alternative is a
-  // test that shells out to a real model, which is slow, costs money, and answers differently
-  // every run. The default is the real thing.
-  const run = opts.run ?? runClaude;
+  const attempts = opts.repairAttempts ?? DEFAULT_REPAIR_ATTEMPTS;
+  const run = (prompt: string): Promise<string> =>
+    opts.provider.run(prompt, { signal: opts.signal, onStderr: opts.onStderr });
 
   // Output that is not JSON at all is as repairable as output that is JSON of the wrong shape, and
   // more so: "your JSON is malformed at position 10977" is a mechanical fix. It used to throw
@@ -91,7 +68,7 @@ export async function generateDeck(
   let raw = await run(buildGeneratePrompt(content, voice));
   let result = check(raw);
 
-  for (let attempt = 1; !result.ok && attempt <= REPAIR_ATTEMPTS; attempt++) {
+  for (let attempt = 1; !result.ok && attempt <= attempts; attempt++) {
     opts.onRetry?.(attempt, result.errors);
     raw = await run(buildRepairPrompt(raw, result.errors));
     result = check(raw);
@@ -101,8 +78,8 @@ export async function generateDeck(
   if (!result.ok) throw new Error(`the generated deck could not be repaired:\n${result.errors}`);
   const deck = result.deck;
   // A named client wins over whatever the model inferred. The workspace groups your decks by
-  // client (D23) and it is not something to leave to a guess: asked to infer it from an
-  // OrbitQube deck, the model reasonably answered "orbitqube", which is the sender.
+  // client (D23) and it is not something to leave to a guess: asked to infer it from a deck
+  // written by the sender, the model reasonably answered with the sender's own name.
   if (client) deck.workspace = client;
   return deck;
 }

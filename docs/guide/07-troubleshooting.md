@@ -8,10 +8,27 @@ missing, that is a documentation bug worth an issue.
 ## Generation
 
 **`decktrail generate` fails or says Claude Code is not logged in.**
-Generation runs on your own Claude subscription through Claude Code, not an API key. Install
-Claude Code and run `claude login` once. If the subscription has lapsed, generation fails with a
-clear message rather than stalling (decision D9). If you do not use Claude Code, write the deck
-JSON by hand; see [Writing a deck](02-writing-decks.md).
+By default generation runs on your own Claude subscription through Claude Code, not an API key.
+Install Claude Code and run `claude login` once. If the subscription has lapsed, generation fails
+with a clear message rather than stalling (decision D9). If you do not use Claude Code, either run
+`--provider opencode` against a local or free model (decision D25), or write the deck JSON by
+hand; see [Writing a deck](02-writing-decks.md).
+
+**`the "opencode" command was not found`.**
+DeckTrail spawns OpenCode, it does not bundle it. Install it, confirm `opencode --version`
+answers in the same shell you run DeckTrail from, and check `decktrail config show` reports the
+provider you expect. If OpenCode lives somewhere unusual, point at it with `--command` or
+`DT_OPENCODE_COMMAND`.
+
+**Generation with a small model keeps failing to validate.**
+A smaller model gets the writing right and the schema wrong more often, which is exactly what the
+repair loop is for. Give it more attempts with `--repair-attempts 4` (or
+`DT_GENERATE_REPAIR_ATTEMPTS`), and raise `--timeout-ms` if the model is slow rather than wrong.
+If it still cannot produce valid output, the error names the exact field; fix it by hand.
+
+**Generation says the command timed out.**
+A local model on modest hardware can take several minutes for a long deck. The default budget is
+ten minutes per call. Raise it with `DT_GENERATE_TIMEOUT_MS`, or pick a faster model.
 
 **The generated deck does not validate.**
 The generator repairs an invalid field once or twice on its own, then gives up with the exact

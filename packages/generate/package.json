@@ -1,13 +1,10 @@
 {
-  "name": "@decktrail/studio",
+  "name": "@decktrail/generate",
   "version": "0.0.0",
   "private": true,
-  "description": "DeckTrail studio: generate a deck IR on your own machine (subscription-only) and render or validate it.",
+  "description": "DeckTrail generation engine: turn source content into a validated deck IR through a pluggable model provider.",
   "license": "AGPL-3.0-only",
   "type": "module",
-  "bin": {
-    "decktrail": "./dist/cli.js"
-  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -16,16 +13,14 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist", "skill"],
+  "files": ["dist"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
-    "@decktrail/generate": "workspace:*",
-    "@decktrail/ir": "workspace:*",
-    "@decktrail/renderers": "workspace:*"
+    "@decktrail/ir": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.1.1"

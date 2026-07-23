@@ -151,6 +151,11 @@ the product is dogfooded on real client use rather than a demo.
 
 ## D9. V1 generation is subscription-only and runs on the freelancer's own machine
 
+**Amended by D25**, which adds a second generation backend. The half of this decision that
+governs the server is unchanged and is the load-bearing half: the portal still runs no
+generation and holds no agent loop. What D25 changes is the claim that Claude Code is the
+*only* backend on the freelancer's machine. Read the two together.
+
 **Decision:** Refines D1. In version 1 the only way to generate deck content is a
 Claude Code login on the freelancer's own machine (a Claude Pro or Max
 subscription, authenticated once with `claude login`). There is no application
@@ -678,3 +683,51 @@ pack, not an AI generation.
 (watermarked, tiles resolve to the recipient's shares), click through to a gated artifact,
 unauthenticated open returns the sign-in page, and a different recipient opening the hub link
 gets the not-available page.
+
+---
+
+## D25. Generation has a provider seam, and OpenCode is the second backend
+
+**Decision:** Amends D9. Generation is no longer bound to one model backend. It moves out of the
+command line tool into its own package, `packages/generate`, behind a `GenerationProvider`
+interface, and ships with two implementations:
+
+| Provider | What it runs | What it costs | Needs a key |
+|---|---|---|---|
+| `claude` (default) | the `claude` command line tool in print mode, on your own Claude Code login | nothing beyond the subscription | no |
+| `opencode` | the `opencode` command line tool | whatever its configured model costs, and there are genuinely free ones | depends on the model |
+
+`claude` stays the default. At stock settings DeckTrail generates exactly as it did before, and
+every other backend is something the operator opted into by name.
+
+**Why:**
+1. **Version 1 was unusable without a Claude subscription**, which D9 accepted as a cost and
+   which is most of the target market. OpenCode reaches a model running on your own machine
+   (Ollama, LM Studio, llama.cpp), its own zero-cost tier, and hosted free tiers. That removes
+   the paywall from the one feature that had one.
+2. **The seam was already there and was being duplicated instead.** The repair loop, the schema
+   validation and the workspace rule are identical whatever writes the JSON, and the prompt is
+   the same words either way. One interface below them is smaller than a second copy beside them.
+3. **The portal is unaffected.** This is deliberately the half of D9 that does not move: no
+   generation, no agent loop and no key storage on the server, which is what lets the portal sit
+   on a shared machine next to workloads that matter.
+
+**Consequences:**
+- **The "no API key" claim is now conditional and must be written that way.** It is still true
+  of the default and of a local model. It is not true of a hosted free tier, which needs a key
+  configured in OpenCode, not in DeckTrail. Nothing in this repository may state it flatly.
+- **DeckTrail never holds a model credential.** Which provider OpenCode talks to, and with what
+  key, is OpenCode's own configuration on the operator's machine. DeckTrail spawns a command and
+  reads its output.
+- **A smaller model needs a bigger repair budget.** The retry count, the timeout and the model
+  are settings rather than constants, because the right values differ per backend.
+- **Output quality is the operator's to judge.** A local model writes a visibly different deck
+  from the same content, so the tool prints which backend and which model ran before it starts.
+
+**Verified against a real install (OpenCode 1.18.4), not against its documentation,** which is
+silent or wrong on all three points: `opencode run` reads a piped stdin even though only a
+positional message argument is documented; stdout carries the model's text alone, with the
+progress chrome on stderr; and `--format json` emits raw session events rather than model output,
+so it is the wrong flag here. On Windows the tool installs as an npm shim, which Node refuses to
+execute directly, so the spawn helper resolves the command through PATH and uses a shell only for
+`.cmd` and `.bat`.

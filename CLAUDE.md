@@ -89,7 +89,8 @@ also pins the author to the maintainer, so **do not enable it on a fork**; see
 | `packages/ir` | Zod schemas. A deck is JSON. This is the boundary: constrain values here, not at the renderer. |
 | `packages/renderers` | Pure functions, IR plus theme to HTML. Standalone and portal (watermarked) variants. |
 | `packages/portal` | Fastify, Drizzle, Postgres. Auth, the admin API, and serving gated decks. |
-| `packages/studio` | The `decktrail` CLI: validate, render, generate, push, brand. |
+| `packages/generate` | The generation engine: prompt, repair loop, and the model providers. A library: no filesystem, no argv, no portal, and it never reads the environment. |
+| `packages/studio` | The `decktrail` CLI: validate, render, generate, push, brand, voice, config. Owns everything `generate` deliberately does not: argv, files, settings, the portal. |
 | `packages/console` | The owner's React dashboard, served at `/admin`. |
 
 `docs/DECISIONS.md` holds every settled decision and supersedes anything that contradicts it,

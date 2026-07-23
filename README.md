@@ -67,8 +67,9 @@ screenshot; the goal is friction plus attribution, not absolute prevention.
   you edit lines and totals live on the call.
 - **Your brand, not ours.** Per-artifact themes with your own colours, type, and logo,
   managed from the console.
-- **Your voice.** Deck generation (via your own Claude Code login) writes in a register you
-  configure, not a default baked in by anyone else.
+- **Your voice.** Deck generation writes in a register you configure, not a default baked in by
+  anyone else. It runs on your own machine either way: through your Claude Code login, or through
+  OpenCode against a model on your own hardware or a free tier.
 
 ## Quickstart
 
