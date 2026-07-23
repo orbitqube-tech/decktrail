@@ -10,12 +10,10 @@ The complete field-by-field shape is in [the IR spec](../IR-SPEC.md); this is th
 
 ## Two ways to author
 
-### Generate from notes (with Claude Code)
+### Generate from notes
 
-If you have a Claude Pro or Max subscription and Claude Code installed and logged in
-(`claude login`), DeckTrail turns prose into a finished deck in your voice. It runs on your
-machine, on your subscription; the portal never sees a model key and your content never leaves
-your control.
+DeckTrail turns prose into a finished deck in your voice. It runs on your machine whichever model
+writes it: the portal never sees a model key, and your content never leaves your control.
 
 ```sh
 decktrail generate notes.md --client acme --out deck.json
@@ -23,13 +21,55 @@ decktrail generate notes.md --client acme --out deck.json
 
 - `notes.md` is any prose: a brief, meeting notes, an existing document's text.
 - `--client acme` sets the workspace (the client this deck is for). See [workspaces](#workspaces).
-- The voice comes from, in order: `--voice voice.json`, a `voice.json` in the directory you run the command from, or
-  the voice saved in your console (pass `--portal <url> --token <token>` to read it). With none
-  of those, a neutral default. See [Your brand and your voice](03-brand-and-voice.md).
+- The voice comes from, in order: `--voice voice.json`, a `voice.json` in the directory you run
+  the command from, the voice saved in your console, that voice's local cache when the console
+  cannot be reached, and failing all of those a neutral default. See
+  [Your brand and your voice](03-brand-and-voice.md).
 
 If generation produces an invalid field, it repairs itself once or twice automatically before
-giving up with the exact error. If Claude Code is not logged in, it fails with a clear message
-rather than stalling.
+giving up with the exact error.
+
+#### Choosing the model
+
+The default is **your own Claude Code login**: a Claude Pro or Max subscription, installed and
+logged in with `claude login`, costing nothing beyond the subscription. If it is not logged in,
+generation fails with a clear message rather than stalling.
+
+You do not need a Claude subscription. With [OpenCode](https://opencode.ai) installed, DeckTrail
+can drive whatever model you have configured there, including one running on your own hardware
+and OpenCode's own free tier:
+
+```sh
+decktrail generate notes.md --client acme \
+  --provider opencode --model opencode/nemotron-3-ultra-free
+```
+
+Set it once instead of typing it every time, in `.decktrail/config.json`:
+
+```json
+{ "generate": { "provider": "opencode", "model": "opencode/nemotron-3-ultra-free" } }
+```
+
+DeckTrail holds no model credential in either case. Whatever a backend needs to authenticate is
+that backend's own configuration. `decktrail config show` prints what resolved and from where.
+
+A smaller model writes a good deck and gets the schema wrong more often. Give it more attempts
+with `--repair-attempts 4` rather than abandoning it, and expect a visibly different deck from
+the same notes: the tool prints which model ran, so you can tell them apart later.
+
+#### Generating with no portal reachable
+
+Generation does not need the portal. Only your voice lives there, so pull a copy before you lose
+the connection:
+
+```sh
+decktrail voice pull
+```
+
+After that, generation offline uses the cached register and tells you the date it was cached. If
+you never pulled one, it falls back to the neutral default and says so. It does not fail: by the
+time the portal turns out to be unreachable you have already chosen your notes and your client,
+and a plainer voice is a better outcome than no deck.
 
 ### Write it by hand
 

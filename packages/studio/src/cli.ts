@@ -1,58 +1,12 @@
 #!/usr/bin/env node
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { Voice, Theme } from "@decktrail/ir";
+import { Theme } from "@decktrail/ir";
+import { generateDeck, createProvider, PROVIDER_IDS } from "@decktrail/generate";
 import { runValidate, runRender } from "./commands.js";
-import { generateDeck } from "./generate.js";
 import { publishAndShare, fetchVoice } from "./push.js";
 import { fetchBrand } from "./brand.js";
-
-/**
- * Load the author's Voice for generation, or undefined for the neutral default.
- *
- * Order, most specific first:
- *   1. --voice <file>, an explicit file the caller named.
- *   2. voice.json beside the content, for someone working entirely from the command line.
- *   3. The voice set in the console, read from the portal. This is the one an operator means
- *      when they edit the Voice tab and press Save.
- * A --voice-md (else voice.md) is folded into whichever wins.
- *
- * The portal is last rather than first so an explicit local file still wins, but it is here at
- * all because before this it was nowhere: the console wrote the voice to a row that nothing
- * read, and generation silently used a file on disk instead.
- */
-async function loadVoice(rest: string[]): Promise<Voice | undefined> {
-  const jsonPath = flag(rest, "--voice") ?? (existsSync("voice.json") ? "voice.json" : undefined);
-  const mdPath = flag(rest, "--voice-md") ?? (existsSync("voice.md") ? "voice.md" : undefined);
-
-  if (!jsonPath) {
-    const portal = flag(rest, "--portal");
-    const token = flag(rest, "--token");
-    if (portal && token) {
-      const remote = await fetchVoice(portal, token);
-      if (remote) {
-        const base = Voice.parse(remote);
-        if (mdPath) {
-          const md = readFileSync(mdPath, "utf8").trim();
-          base.instructions = base.instructions ? `${base.instructions}
-
-${md}` : md;
-        }
-        process.stderr.write(`using the voice set in the console at ${portal}
-`);
-        return base;
-      }
-    }
-  }
-
-  if (!jsonPath && !mdPath) return undefined;
-
-  const base = jsonPath ? Voice.parse(JSON.parse(readFileSync(jsonPath, "utf8"))) : Voice.parse({ name: "custom" });
-  if (mdPath) {
-    const md = readFileSync(mdPath, "utf8").trim();
-    base.instructions = base.instructions ? `${base.instructions}\n\n${md}` : md;
-  }
-  return base;
-}
+import { loadConfig, describeConfig, type ConfigFlags, type StudioConfig } from "./config.js";
+import { resolveVoice, describeVoiceOrigin, writeVoiceCache, voiceCachePath } from "./voice.js";
 
 function usage(): never {
   process.stdout.write(`decktrail <command>
@@ -65,18 +19,30 @@ function usage(): never {
                                      comes from --theme, else theme.json here, else a
                                      neutral default.
   generate <content> [--out <file>] [--client <name>] [--voice <file.json>] [--voice-md <file.md>]
-                     [--portal <url> --token <token>]
-                                     Generate a deck IR from a content file using your
-                                     Claude Code login (subscription-only), then validate it.
-                                     --client sets who the deck is for, which groups your
-                                     decks in the console; inferred from the content if
-                                     omitted. The voice comes from --voice, else voice.json
-                                     here, else the voice you set in the console (give
-                                     --portal and --token to read it), else a neutral
-                                     default.
-  push <file> --portal <url> --token <token> [--recipient <email>] [--theme <file>]
+                     [--provider <${PROVIDER_IDS.join("|")}>] [--model <provider/model>] [--command <bin>]
+                     [--portal <url>] [--token <token>]
+                                     Generate a deck IR from a content file, then validate it.
+                                     --provider picks the model backend: "claude" (the default)
+                                     runs your own Claude Code login and needs no key; "opencode"
+                                     runs the OpenCode CLI, which is how you reach a local or a
+                                     free model. --client sets who the deck is for, which groups
+                                     your decks in the console; inferred from the content if
+                                     omitted. The voice comes from --voice, else voice.json here,
+                                     else the voice you set in the console, else its local cache
+                                     when the portal is unreachable, else a neutral default.
+  push <file> [--portal <url>] [--token <token>] [--recipient <email>] [--theme <file>]
                                      Publish an IR file to a portal, and optionally share it.
   brand <url> [--out <file>]         Extract a theme from a website into theme.json.
+  voice pull [--portal <url>] [--token <token>]
+                                     Read the voice from the portal and cache it locally, so
+                                     generation keeps its register when you are offline.
+  voice show                         Print the voice that generation would use, and where it
+                                     came from.
+  config show                        Print every resolved setting and which layer set it. The
+                                     admin token is reported as set or not set, never printed.
+
+  Settings resolve flag, then environment, then .decktrail/config.json here, then the same
+  file under your home directory, then the built-in default. See "config show".
 `);
   process.exit(1);
 }
@@ -84,6 +50,37 @@ function usage(): never {
 function flag(args: string[], name: string): string | undefined {
   const i = args.indexOf(name);
   return i >= 0 ? args[i + 1] : undefined;
+}
+
+function configFlags(rest: string[]): ConfigFlags {
+  return {
+    portal: flag(rest, "--portal"),
+    token: flag(rest, "--token"),
+    provider: flag(rest, "--provider"),
+    model: flag(rest, "--model"),
+    command: flag(rest, "--command"),
+    timeoutMs: flag(rest, "--timeout-ms"),
+    repairAttempts: flag(rest, "--repair-attempts"),
+  };
+}
+
+const warn = (message: string): void => {
+  process.stderr.write(`${message}\n`);
+};
+
+/** Fail naming the setting and every way to supply it, rather than the bare word "required". */
+function requirePortal(config: StudioConfig): { url: string; token: string } {
+  const url = config.portal.url.value;
+  const token = config.portal.token.value;
+  if (!url || !token) {
+    const missing = [!url ? "the portal URL" : "", !token ? "the admin token" : ""].filter(Boolean).join(" and ");
+    process.stderr.write(
+      `${missing} is not set. Supply it with --portal / --token, or DT_PORTAL_URL / DT_PORTAL_TOKEN, ` +
+        `or a .decktrail/config.json. Run "decktrail config show" to see what resolved.\n`,
+    );
+    process.exit(1);
+  }
+  return { url, token };
 }
 
 async function main(): Promise<void> {
@@ -124,12 +121,75 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (cmd === "config") {
+    if (file !== "show") usage();
+    process.stdout.write(`${describeConfig(loadConfig(configFlags(rest)))}\n`);
+    return;
+  }
+
+  if (cmd === "voice") {
+    const config = loadConfig(configFlags(rest));
+
+    if (file === "pull") {
+      const { url, token } = requirePortal(config);
+      const remote = await fetchVoice(url, token);
+      if (!remote) {
+        process.stderr.write(`the portal at ${url} has no voice set, so there is nothing to cache\n`);
+        process.exit(1);
+      }
+      const entry = writeVoiceCache(url, remote);
+      process.stdout.write(`cached the voice from ${url} at ${voiceCachePath()} (${entry.fetchedAt})\n`);
+      return;
+    }
+
+    if (file === "show") {
+      const resolved = await resolveVoice({
+        jsonPath: flag(rest, "--voice") ?? (existsSync("voice.json") ? "voice.json" : undefined),
+        markdownPath: flag(rest, "--voice-md") ?? (existsSync("voice.md") ? "voice.md" : undefined),
+        portalUrl: config.portal.url.value,
+        portalToken: config.portal.token.value,
+        cacheMaxAgeDays: config.voice.cacheMaxAgeDays.value,
+        warn,
+      });
+      process.stdout.write(`${describeVoiceOrigin(resolved.origin)}\n`);
+      if (resolved.voice) process.stdout.write(`${JSON.stringify(resolved.voice, null, 2)}\n`);
+      return;
+    }
+
+    usage();
+  }
+
   if (cmd === "generate") {
     if (!file) usage();
-    const deck = await generateDeck(readFileSync(file, "utf8"), await loadVoice(rest), flag(rest, "--client"), {
+    const config = loadConfig(configFlags(rest));
+
+    const resolved = await resolveVoice({
+      jsonPath: flag(rest, "--voice") ?? (existsSync("voice.json") ? "voice.json" : undefined),
+      markdownPath: flag(rest, "--voice-md") ?? (existsSync("voice.md") ? "voice.md" : undefined),
+      portalUrl: config.portal.url.value,
+      portalToken: config.portal.token.value,
+      cacheMaxAgeDays: config.voice.cacheMaxAgeDays.value,
+      warn,
+    });
+    warn(describeVoiceOrigin(resolved.origin));
+
+    const provider = createProvider({
+      id: config.generate.provider.value,
+      command: config.generate.command.value,
+      model: config.generate.model.value,
+      timeoutMs: config.generate.timeoutMs.value,
+    });
+    // Which model wrote the deck is not a detail: two backends produce visibly different decks
+    // from the same content, and an author who cannot see which one ran cannot account for the
+    // difference.
+    warn(`generating with ${provider.describe()}`);
+
+    const deck = await generateDeck(readFileSync(file, "utf8"), resolved.voice, flag(rest, "--client"), {
+      provider,
+      repairAttempts: config.generate.repairAttempts.value,
       // Repair is another slow model call, so say it is happening rather than appear to hang.
       onRetry: (attempt) =>
-        process.stderr.write(`the generated deck did not validate, asking for a repair (attempt ${attempt})\n`),
+        warn(`the generated deck did not validate, asking for a repair (attempt ${attempt})`),
     });
     const out = flag(rest, "--out") ?? "deck.json";
     writeFileSync(out, JSON.stringify(deck, null, 2));
@@ -139,17 +199,13 @@ async function main(): Promise<void> {
 
   if (cmd === "push") {
     if (!file) usage();
-    const portal = flag(rest, "--portal");
-    const token = flag(rest, "--token");
-    if (!portal || !token) {
-      process.stderr.write("push requires --portal <url> and --token <token>\n");
-      process.exit(1);
-    }
+    const config = loadConfig(configFlags(rest));
+    const { url, token } = requirePortal(config);
     const ir = JSON.parse(readFileSync(file, "utf8"));
     const themeFile = flag(rest, "--theme");
     const theme = themeFile ? JSON.parse(readFileSync(themeFile, "utf8")) : undefined;
     const recipient = flag(rest, "--recipient");
-    const { published, share } = await publishAndShare(portal, token, ir, { theme, recipient });
+    const { published, share } = await publishAndShare(url, token, ir, { theme, recipient });
     process.stdout.write(`published: artifact ${published.artifactId}, version ${published.version}\n`);
     if (share) process.stdout.write(`share: ${share.url}\n`);
     return;

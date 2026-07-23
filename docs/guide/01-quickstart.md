@@ -107,7 +107,18 @@ API key and the portal never sees your content.
 decktrail generate notes.md --client acme --out deck.json
 ```
 
-**If you do not**, write the JSON yourself. It is not hard, and
+**If you do not have a Claude subscription**, install
+[OpenCode](https://opencode.ai) and point DeckTrail at it. The deck is still written on your
+machine and the portal still never sees your content. Which model OpenCode uses, and whether it
+costs anything, is OpenCode's own configuration: a model running on your own hardware and
+OpenCode's free tier both cost nothing.
+
+```sh
+decktrail generate notes.md --client acme --out deck.json \
+  --provider opencode --model opencode/nemotron-3-ultra-free
+```
+
+**If you would rather not generate at all**, write the JSON yourself. It is not hard, and
 [Writing a deck](02-writing-decks.md) has the full shape. The smallest deck that works:
 
 ```json

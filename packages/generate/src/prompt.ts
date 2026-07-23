@@ -25,9 +25,12 @@ export function renderVoice(voice: Voice): string {
 }
 
 /**
- * Build the generation prompt handed to Claude Code (subscription-only, D9). The IR shape is
- * fixed (it is the schema); the voice block is configurable per author, falling back to the
- * neutral default.
+ * Build the generation prompt handed to the model. The IR shape is fixed (it is the schema); the
+ * voice block is configurable per author, falling back to the neutral default.
+ *
+ * The prompt is the same whichever backend runs it. That is the point of keeping it here rather
+ * than inside a provider: a deck generated locally and a deck generated through a subscription
+ * are asked for in identical words, so the only variable is the model.
  */
 export function buildGeneratePrompt(content: string, voice?: Voice): string {
   const voiceBlock = voice ? renderVoice(voice) : DEFAULT_VOICE_BLOCK;

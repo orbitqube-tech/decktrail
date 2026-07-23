@@ -52,7 +52,7 @@ The second and third lists are the point. Any product page can tell you what it 
 
 | | |
 |---|---|
-| **From your notes** | `decktrail generate notes.md` writes the deck through **your own Claude Code login**. No API key, no per-token cost, and the portal never sees your content. |
+| **From your notes** | `decktrail generate notes.md` writes the deck on your machine, and the portal never sees your content. By default it runs **your own Claude Code login**: no key, no per-token cost. `--provider opencode` runs the OpenCode command line tool instead, which reaches a model on your own hardware, its free tier, or a hosted one. |
 | **Layouts, not CSS** | The model picks a layout and fills its slots. It cannot emit CSS or invent structure, so it cannot produce something broken or unbrandable. |
 | **Write it by hand instead** | The IR is plain JSON. `decktrail validate` checks it. The generator is optional. |
 
