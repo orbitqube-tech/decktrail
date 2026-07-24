@@ -1,6 +1,6 @@
 ---
 name: decktrail-deck
-description: Generate a DeckTrail deck intermediate representation (IR) from content on your own machine using your Claude subscription. Use when turning notes, a brief, or a document into a branded, gated, trackable deck for DeckTrail.
+description: Generate a DeckTrail deck intermediate representation (IR) from content on your own machine. Use when turning notes, a brief, or an existing document into a branded, gated, trackable deck for DeckTrail.
 ---
 
 # DeckTrail deck generation
@@ -9,8 +9,14 @@ Turn the user's content into a DeckTrail slide deck expressed as a JSON intermed
 representation (IR). You emit the IR; the DeckTrail renderers turn it into HTML. You never
 write CSS and never invent structure: you pick a layout and fill its named slots.
 
-Generation runs on the user's own machine using their Claude subscription. No application
-programming interface (API) key is involved.
+Generation runs on the user's own machine, never on the portal. By default it uses their own
+Claude subscription, which involves no application programming interface (API) key; it can also
+run through the OpenCode command line tool against a local or free model, in which case whatever
+that model needs is OpenCode's configuration and never DeckTrail's (see `DECISIONS.md` D25).
+
+The content does not have to be prose. `decktrail extract` reads a PDF, a PowerPoint deck, a Word
+document, or a scan, and `decktrail generate` accepts those directly. They are re-authored rather
+than converted: the words survive and the original's layout does not (D4 and D26).
 
 ## Output
 
@@ -52,4 +58,5 @@ Open on the outcome, not an agenda. This mirrors the DeckTrail writing rules.
 1. Write the JSON to a file, for example `deck.json`.
 2. Validate it: `decktrail validate deck.json`.
 3. Preview it locally: `decktrail render deck.json --out deck.html`.
-4. When ready, publish it to your portal (a later step, once the portal ingest is wired).
+4. When ready, publish it and share it with the recipient:
+   `decktrail push deck.json --portal <url> --token <token> --recipient <email>`.
