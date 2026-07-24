@@ -2,10 +2,11 @@
 
 **Your decks, private to each client and traceable. Self-hosted and free.**
 
-You send a client your best thinking and, most of the time, hear nothing back. DeckTrail gives
-the work you send a home you own: a branded, gated, watermarked web deck, delivered to one named
-person over a one-time sign-in link, with a clear record of who opened it, how far they read, and
-for how long. It is built for the age of large language models, where a document you send can
+You send a client a deck that took days to get right, and most of the time you hear nothing back.
+You never learn whether it was opened, which section held their attention, or where they lost
+interest. DeckTrail gives the work you send a home you own: a branded, gated, watermarked web
+deck, delivered to one named person over a one-time sign-in link, with a clear record of who
+opened it, how far they read, and for how long. It is built for the age of large language models, where a document you send can
 resurface anywhere, reworded and unattributed. When that happens, attribution is the part that
 still travels, so attribution is what DeckTrail gives you.
 
