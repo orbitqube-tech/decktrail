@@ -2,6 +2,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { DEFAULT_PROVIDER_ID, DEFAULT_REPAIR_ATTEMPTS, DEFAULT_GENERATE_TIMEOUT_MS } from "@decktrail/generate";
+import { DEFAULT_OCR_LANG, type OcrMode } from "@decktrail/ingest";
 
 /**
  * Where settings live, and which one wins.
@@ -45,7 +46,17 @@ export interface StudioConfig {
   voice: {
     cacheMaxAgeDays: Resolved<number>;
   };
+  ingest: {
+    /** When to read a document as pictures: auto, never, or force. */
+    ocr: Resolved<OcrMode>;
+    ocrLang: Resolved<string>;
+    /** A local directory of OCR language data, which is what makes a run fully offline. */
+    ocrLangPath: Resolved<string | undefined>;
+  };
 }
+
+/** The reading modes, named here so a bad value can list what was allowed. */
+export const OCR_MODES: readonly OcrMode[] = ["auto", "never", "force"];
 
 /**
  * How old a cached voice may get before the warning sharpens.
@@ -61,6 +72,7 @@ interface FileShape {
   portal?: { url?: unknown; token?: unknown };
   generate?: { provider?: unknown; model?: unknown; command?: unknown; timeoutMs?: unknown; repairAttempts?: unknown };
   voice?: { cacheMaxAgeDays?: unknown };
+  ingest?: { ocr?: unknown; ocrLang?: unknown; ocrLangPath?: unknown };
 }
 
 function readConfigFile(dir: string): FileShape | null {
@@ -118,6 +130,9 @@ export interface ConfigFlags {
   command?: string;
   timeoutMs?: string;
   repairAttempts?: string;
+  ocr?: string;
+  ocrLang?: string;
+  ocrLangPath?: string;
 }
 
 /** Resolve every setting from flags, environment, and the two config files. */
@@ -176,7 +191,44 @@ export function loadConfig(
         "DT_VOICE_CACHE_MAX_AGE_DAYS",
       ),
     },
+    ingest: {
+      ocr: pickOcrMode(flags.ocr, env.DT_OCR_MODE, project.ingest?.ocr, home.ingest?.ocr),
+      ocrLang: pickString(
+        flags.ocrLang,
+        env.DT_OCR_LANG,
+        project.ingest?.ocrLang,
+        home.ingest?.ocrLang,
+        DEFAULT_OCR_LANG,
+      ) as Resolved<string>,
+      ocrLangPath: pickString(
+        flags.ocrLangPath,
+        env.DT_OCR_LANG_PATH,
+        project.ingest?.ocrLangPath,
+        home.ingest?.ocrLangPath,
+        undefined,
+      ),
+    },
   };
+}
+
+/**
+ * Resolve the reading mode, refusing anything that is not one of the three.
+ *
+ * A misspelt mode is not quietly downgraded to the default. "nevr" meaning "never" but silently
+ * behaving as "auto" would send a scanned contract to the OCR engine after the operator asked it
+ * not to, and say nothing about it.
+ */
+function pickOcrMode(
+  flag: string | undefined,
+  env: string | undefined,
+  project: unknown,
+  home: unknown,
+): Resolved<OcrMode> {
+  const resolved = pickString(flag, env, project, home, "auto") as Resolved<string>;
+  if (!(OCR_MODES as readonly string[]).includes(resolved.value)) {
+    throw new Error(`unknown reading mode "${resolved.value}". Known modes: ${OCR_MODES.join(", ")}.`);
+  }
+  return resolved as Resolved<OcrMode>;
 }
 
 /**
@@ -201,5 +253,9 @@ export function describeConfig(config: StudioConfig): string {
     line("repairAttempts", config.generate.repairAttempts),
     "voice",
     line("cacheMaxAgeDays", config.voice.cacheMaxAgeDays),
+    "ingest",
+    line("ocr", config.ingest.ocr),
+    line("ocrLang", config.ingest.ocrLang),
+    line("ocrLangPath", config.ingest.ocrLangPath),
   ].join("\n");
 }

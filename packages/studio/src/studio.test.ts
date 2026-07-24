@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { runValidate, runRender, pushArtifact, publishAndShare, fetchVoice, extractBrand, fetchBrand, stylesheetUrls } from "./index.js";
+import { runValidate, runRender, pushArtifact, publishAndShare, fetchVoice, extractBrand, fetchBrand, stylesheetUrls, loadConfig, describeConfig, OCR_MODES } from "./index.js";
 
 const deck = {
   id: "d",
@@ -323,3 +323,41 @@ describe("what render says when it cannot", () => {
     expect(() => runRender({ hello: "world" })).toThrow(/not a slide deck, document, tool, or pack/);
   });
 });
+
+describe("resolving settings", () => {
+  // The config layer had no tests when it was written. It decides which portal a deck is
+  // published to and which model writes it, so a wrong answer here is not a small one.
+  const noFiles = { HOME: "/nonexistent-so-no-config-file-is-found" } as NodeJS.ProcessEnv;
+
+  it("prefers a flag over the environment, and says which layer won", () => {
+    const c = loadConfig({ provider: "opencode" }, { ...noFiles, DT_GENERATE_PROVIDER: "claude" }, "/nonexistent");
+    expect(c.generate.provider.value).toBe("opencode");
+    expect(c.generate.provider.layer).toBe("flag");
+  });
+
+  it("falls back to the built-in default when nothing is set", () => {
+    const c = loadConfig({}, noFiles, "/nonexistent");
+    expect(c.generate.provider.value).toBe("claude");
+    expect(c.generate.provider.layer).toBe("default");
+    expect(c.ingest.ocr.value).toBe("auto");
+  });
+
+  it("refuses a misspelt reading mode instead of quietly using the default", () => {
+    // "nevr" silently behaving as "auto" would send a scanned document to the reader after the
+    // operator asked it not to, and say nothing about it.
+    expect(() => loadConfig({ ocr: "nevr" }, noFiles, "/nonexistent")).toThrow(/unknown reading mode "nevr"/);
+    expect(() => loadConfig({ ocr: "nevr" }, noFiles, "/nonexistent")).toThrow(/auto, never, force/);
+  });
+
+  it("accepts every reading mode it advertises", () => {
+    for (const mode of OCR_MODES) {
+      expect(loadConfig({ ocr: mode }, noFiles, "/nonexistent").ingest.ocr.value).toBe(mode);
+    }
+  });
+
+  it("never puts the admin token in what it prints", () => {
+    const shown = describeConfig(loadConfig({ token: "a-real-looking-secret-value" }, noFiles, "/nonexistent"));
+    expect(shown).not.toContain("a-real-looking-secret-value");
+    expect(shown).toContain("(set)");
+  });
+})

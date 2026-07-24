@@ -57,6 +57,38 @@ A smaller model writes a good deck and gets the schema wrong more often. Give it
 with `--repair-attempts 4` rather than abandoning it, and expect a visibly different deck from
 the same notes: the tool prints which model ran, so you can tell them apart later.
 
+#### Starting from a document you already have
+
+The content does not have to be prose you wrote for the purpose. Point `generate` at a PDF, a
+PowerPoint deck, a Word document, or a photograph of a page, and the text is pulled out first:
+
+```sh
+decktrail generate last-years-proposal.pptx --client acme --out deck.json
+```
+
+This **re-authors, it does not convert**. The words come across; the layout, the master slides, and
+anything carried only by a picture do not. That is the deal, and it is deliberate: the point is a
+deck rebuilt in your brand and your layouts, not a copy of the old one.
+
+Check what was found before you spend a model call on it:
+
+```sh
+decktrail extract last-years-proposal.pptx --out notes.md
+```
+
+For a normal PDF or deck the extraction is exact, because the text is already text. A **scan or a
+photograph has no text in it**, so the words have to be read off the picture, and that reading is
+never perfect. In testing, a rendered line reading "Pilot fee is 18 lakh rupees" came back as
+"Pilotfee is I 8 lakh rupees". The model will faithfully carry a mistake like that into a slide, so
+read the extraction first and fix it. Reading pictures happens only when a document carries no text
+of its own; `--ocr never` turns it off entirely, and `--ocr force` uses it even over a text layer,
+for an export whose own text is worse than the page it sits on.
+
+Two things worth knowing about reading pictures: the engine downloads its language data the first
+time it runs, unless `DT_OCR_LANG_PATH` points at a local copy, and a scanned **PDF** additionally
+needs the optional `@napi-rs/canvas` package to turn its pages into images. Your document is never
+uploaded anywhere in either case.
+
 #### Generating with no portal reachable
 
 Generation does not need the portal. Only your voice lives there, so pull a copy before you lose

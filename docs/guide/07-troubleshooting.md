@@ -26,6 +26,26 @@ repair loop is for. Give it more attempts with `--repair-attempts 4` (or
 `DT_GENERATE_REPAIR_ATTEMPTS`), and raise `--timeout-ms` if the model is slow rather than wrong.
 If it still cannot produce valid output, the error names the exact field; fix it by hand.
 
+**Nothing readable came out of my PDF or deck.**
+Run `decktrail extract <file>` to see exactly what was found. A deck whose slides are pictures, or
+a scan, carries no text to read directly. For a scan, let it read the pictures (that is the default)
+or force it with `--ocr force`. If the file genuinely holds no text and no legible image, there is
+nothing to build a deck from, and the command says so rather than writing an empty deck.
+
+**The text from my scan is wrong in places.**
+Expected, and why `extract` exists. Reading words off a picture is never perfect: a test line
+reading "Pilot fee is 18 lakh rupees" came back as "Pilotfee is I 8 lakh rupees". Extract to a file,
+correct it, then generate from the corrected file. A model will carry the mistake into a slide
+without hesitating.
+
+**Reading a scanned PDF fails asking for `@napi-rs/canvas`.**
+Turning PDF pages into images needs that package, which is optional because most people never
+ingest a scan. Install it, or pass a text-based file instead.
+
+**The first time I read a scan it downloaded something.**
+The reading engine fetches its language data once. Your document is never uploaded; only the
+language data comes down. Point `DT_OCR_LANG_PATH` at a local copy to keep it fully offline.
+
 **Generation says the command timed out.**
 A local model on modest hardware can take several minutes for a long deck. The default budget is
 ten minutes per call. Raise it with `DT_GENERATE_TIMEOUT_MS`, or pick a faster model.

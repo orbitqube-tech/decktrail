@@ -2,6 +2,7 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { Theme } from "@decktrail/ir";
 import { generateDeck, createProvider, PROVIDER_IDS } from "@decktrail/generate";
+import { extract as extractDocument, type Extracted } from "@decktrail/ingest";
 import { runValidate, runRender } from "./commands.js";
 import { publishAndShare, fetchVoice } from "./push.js";
 import { fetchBrand } from "./brand.js";
@@ -18,10 +19,20 @@ function usage(): never {
                                      label or --confidential replaces its text. The brand
                                      comes from --theme, else theme.json here, else a
                                      neutral default.
+  extract <file> [--out <file.md>] [--ocr auto|never|force] [--ocr-lang <code>]
+                                     Pull the text out of a PDF, a PowerPoint deck, a Word
+                                     document, an image, or a text file, and print it. Use this
+                                     to check what was found before spending a model call on it,
+                                     which matters most for a scan, where the reading is never
+                                     perfect. A scanned page is read as a picture only when it
+                                     carries no text of its own, unless you say otherwise.
   generate <content> [--out <file>] [--client <name>] [--voice <file.json>] [--voice-md <file.md>]
                      [--provider <${PROVIDER_IDS.join("|")}>] [--model <provider/model>] [--command <bin>]
-                     [--portal <url>] [--token <token>]
+                     [--portal <url>] [--token <token>] [--ocr auto|never|force]
                                      Generate a deck IR from a content file, then validate it.
+                                     The content can be prose, or any file "extract" understands:
+                                     a PDF, a deck, a document, or a scan. Nothing is converted,
+                                     it is re-authored into your own layouts and brand.
                                      --provider picks the model backend: "claude" (the default)
                                      runs your own Claude Code login and needs no key; "opencode"
                                      runs the OpenCode CLI, which is how you reach a local or a
@@ -61,12 +72,38 @@ function configFlags(rest: string[]): ConfigFlags {
     command: flag(rest, "--command"),
     timeoutMs: flag(rest, "--timeout-ms"),
     repairAttempts: flag(rest, "--repair-attempts"),
+    ocr: flag(rest, "--ocr"),
+    ocrLang: flag(rest, "--ocr-lang"),
+    ocrLangPath: flag(rest, "--ocr-lang-path"),
   };
 }
 
 const warn = (message: string): void => {
   process.stderr.write(`${message}\n`);
 };
+
+/**
+ * Read a source document and pull its text out, whatever kind of file it is.
+ *
+ * Everything the extraction has to say is said out loud. Ingestion fails quietly by nature: a
+ * deck whose slides are all pictures, or a scan read badly, both produce something that looks
+ * like a result and is missing the substance. The author is the only one who can catch that, and
+ * only if they are told.
+ */
+async function readSource(file: string, config: StudioConfig): Promise<Extracted> {
+  const bytes = new Uint8Array(readFileSync(file));
+  const result = await extractDocument(bytes, {
+    filename: file,
+    ocr: config.ingest.ocr.value,
+    ocrLang: config.ingest.ocrLang.value,
+    ocrLangPath: config.ingest.ocrLangPath.value,
+    onProgress: warn,
+  });
+  const where = result.pages.length > 1 ? `, ${result.pages.length} ${result.kind === "pptx" ? "slides" : "pages"}` : "";
+  warn(`read ${file} as ${result.kind}${where}${result.usedOcr ? ", by reading its pictures" : ""}`);
+  for (const w of result.warnings) warn(`  note: ${w}`);
+  return result;
+}
 
 /** Fail naming the setting and every way to supply it, rather than the bare word "required". */
 function requirePortal(config: StudioConfig): { url: string; token: string } {
@@ -159,6 +196,23 @@ async function main(): Promise<void> {
     usage();
   }
 
+  if (cmd === "extract") {
+    if (!file) usage();
+    const config = loadConfig(configFlags(rest));
+    const source = await readSource(file, config);
+    const out = flag(rest, "--out");
+    if (out) {
+      writeFileSync(out, `${source.text}\n`);
+      process.stdout.write(`wrote ${out}\n`);
+    } else {
+      process.stdout.write(`${source.text}\n`);
+    }
+    // Nothing readable is a failure, not a successful empty file. A silent zero-byte result is
+    // how an author discovers the problem three steps later, in a deck with nothing in it.
+    if (source.text.trim() === "") process.exit(1);
+    return;
+  }
+
   if (cmd === "generate") {
     if (!file) usage();
     const config = loadConfig(configFlags(rest));
@@ -184,7 +238,16 @@ async function main(): Promise<void> {
     // difference.
     warn(`generating with ${provider.describe()}`);
 
-    const deck = await generateDeck(readFileSync(file, "utf8"), resolved.voice, flag(rest, "--client"), {
+    const source = await readSource(file, config);
+    if (source.text.trim() === "") {
+      process.stderr.write(
+        `nothing readable came out of ${file}, so there is nothing to build a deck from. ` +
+          `Run "decktrail extract ${file}" to see what was found.\n`,
+      );
+      process.exit(1);
+    }
+
+    const deck = await generateDeck(source.text, resolved.voice, flag(rest, "--client"), {
       provider,
       repairAttempts: config.generate.repairAttempts.value,
       // Repair is another slow model call, so say it is happening rather than appear to hang.

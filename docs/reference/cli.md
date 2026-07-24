@@ -55,13 +55,18 @@ talk, a portfolio piece, or a marketing deck: anything meant to be handed around
 
 ## `generate <content> [--out <file>] [--client <name>] [--voice ...] [--portal ... --token ...]`
 
-Write a deck from your notes. It runs on your machine, and your content never reaches the portal
-or us.
+Write a deck from your notes, or from a document you already have. It runs on your machine, and
+your content never reaches the portal or us.
 
 ```sh
 decktrail generate notes.md --client acme --out deck.json
+decktrail generate proposal.pdf --client acme --out deck.json
 decktrail generate notes.md --client acme --provider opencode --model opencode/nemotron-3-ultra-free
 ```
+
+The content can be prose, or any file [`extract`](#extract-file---out-filemd) understands: a PDF, a
+PowerPoint deck, a Word document, or a scan. Those are **re-authored, not converted**: the words
+come across and the original's layout does not. Run `extract` first to see what was found.
 
 | Flag | Effect |
 |---|---|
@@ -181,6 +186,46 @@ Then open the console's Brand tab and finish it. Extraction is a head start, not
 
 ---
 
+## `extract <file> [--out <file.md>]`
+
+Pull the text out of a document, and print it.
+
+```sh
+decktrail extract proposal.pdf
+decktrail extract old-deck.pptx --out notes.md
+```
+
+Understands PDF, PowerPoint (`.pptx`), Word (`.docx`), images, and plain text. The kind is decided
+by the file's **bytes, not its extension**, because a mislabelled file is the thing an ingestion
+path meets constantly.
+
+| Flag | Effect |
+|---|---|
+| `--out <file>` | Write the text to a file instead of printing it. |
+| `--ocr auto\|never\|force` | When to read a page as a picture. Default `auto`. |
+| `--ocr-lang <code>` | Language for reading pictures. Default `eng`. |
+| `--ocr-lang-path <dir>` | A local directory of language data, which makes reading fully offline. |
+
+**Why this command exists.** A PDF or a deck carries its text inside it, so extraction is exact.
+A scan or a photograph does not, and the words have to be read off the picture, which is never
+perfect. In testing, a line reading "Pilot fee is 18 lakh rupees" came back as "Pilotfee is I 8
+lakh rupees". A model will carry a mistake like that into a slide without hesitating. Reading the
+extraction first is how you catch it.
+
+Reading pictures runs only when a document carries no text of its own. `--ocr never` turns it off,
+and `--ocr force` uses it even over a text layer, for an export whose own text is worse than the
+page it sits on.
+
+A file that yields nothing readable **exits non-zero and says so**, rather than writing an empty
+file and reporting success.
+
+Two caveats, both honest rather than hidden: the reading engine downloads its language data the
+first time it runs unless `--ocr-lang-path` points at a local copy, and a scanned **PDF** needs the
+optional `@napi-rs/canvas` package to turn its pages into images. Your document is never uploaded
+in either case; it is read on your machine.
+
+---
+
 ## `voice pull` and `voice show`
 
 `voice pull` reads the voice you set in the console and caches it on this machine. `voice show`
@@ -225,6 +270,9 @@ column exists to make visible.
 | Repair attempts | `DT_GENERATE_REPAIR_ATTEMPTS` | `2` |
 | Call timeout | `DT_GENERATE_TIMEOUT_MS` | `600000` |
 | Voice cache freshness budget | `DT_VOICE_CACHE_MAX_AGE_DAYS` | `30` |
+| When to read a page as a picture | `DT_OCR_MODE` | `auto` |
+| Language for reading pictures | `DT_OCR_LANG` | `eng` |
+| Local language data directory | `DT_OCR_LANG_PATH` | not set |
 
 ```json
 {

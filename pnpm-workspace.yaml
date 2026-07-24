@@ -2,3 +2,6 @@ packages:
   - "packages/*"
 allowBuilds:
   esbuild: true
+  # Its only install script prints a funding banner. Nothing about the engine needs it to run,
+  # so it is denied rather than allowed: an install script that earns nothing should not execute.
+  tesseract.js: false

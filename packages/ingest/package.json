@@ -1,13 +1,10 @@
 {
-  "name": "@decktrail/studio",
+  "name": "@decktrail/ingest",
   "version": "0.0.0",
   "private": true,
-  "description": "DeckTrail studio: generate a deck IR on your own machine (subscription-only) and render or validate it.",
+  "description": "DeckTrail ingestion: pull the substance out of a PDF, a deck, a document, or a scan, so it can be re-authored as a DeckTrail artifact.",
   "license": "AGPL-3.0-only",
   "type": "module",
-  "bin": {
-    "decktrail": "./dist/cli.js"
-  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -16,17 +13,20 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist", "skill"],
+  "files": ["dist"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
-    "@decktrail/generate": "workspace:*",
-    "@decktrail/ingest": "workspace:*",
-    "@decktrail/ir": "workspace:*",
-    "@decktrail/renderers": "workspace:*"
+    "fast-xml-parser": "^5.10.1",
+    "fflate": "^0.8.3",
+    "pdfjs-dist": "^6.1.200",
+    "tesseract.js": "^7.0.0"
+  },
+  "optionalDependencies": {
+    "@napi-rs/canvas": "^1.0.2"
   },
   "devDependencies": {
     "@types/node": "^26.1.1"
