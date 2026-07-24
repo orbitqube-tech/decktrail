@@ -64,19 +64,56 @@ function makePdf(lines: string[]): Uint8Array {
   return strToU8(out);
 }
 
-/** A genuine .pptx: a zip whose slide XML is what PowerPoint actually writes. */
+/**
+ * A genuine .pptx: a zip whose slide XML is what PowerPoint actually writes.
+ *
+ * Notes are keyed by the slide they belong to, and the notes parts are numbered in their OWN
+ * sequence, exactly as PowerPoint numbers them. So a deck whose only notes are on slide three
+ * stores them in `notesSlide1.xml`, and the only thing tying the two together is the slide's
+ * relationship part. That is the real shape of the format, and a fixture that quietly numbered
+ * the parts to match the slides would hide the one thing worth testing here.
+ */
+const OPC_RELS_NS = "http://schemas.openxmlformats.org/package/2006/relationships";
+const NOTES_REL_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide";
+const LAYOUT_REL_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout";
+
 function makePptx(slides: string[][], notes: Record<number, string> = {}): Uint8Array {
   const slideXml = (paras: string[]): string =>
     `<?xml version="1.0"?><p:sld xmlns:p="p" xmlns:a="a"><p:cSld><p:spTree><p:sp><p:txBody>` +
     paras.map((t) => `<a:p><a:r><a:t>${t}</a:t></a:r></a:p>`).join("") +
     `</p:txBody></p:sp></p:spTree></p:cSld></p:sld>`;
+
   const files: Record<string, Uint8Array> = { "[Content_Types].xml": strToU8("<Types/>") };
   slides.forEach((paras, i) => {
     files[`ppt/slides/slide${i + 1}.xml`] = strToU8(slideXml(paras));
   });
-  for (const [n, text] of Object.entries(notes)) {
-    files[`ppt/notesSlides/notesSlide${n}.xml`] = strToU8(slideXml([text]));
-  }
+
+  // Notes parts numbered by their own sequence, not by the slide they belong to.
+  const notesForSlide = new Map<number, string>();
+  Object.entries(notes)
+    .map(([slideNumber, text]) => ({ slideNumber: Number(slideNumber), text }))
+    .sort((a, b) => a.slideNumber - b.slideNumber)
+    .forEach((entry, index) => {
+      const part = `ppt/notesSlides/notesSlide${index + 1}.xml`;
+      files[part] = strToU8(slideXml([entry.text]));
+      notesForSlide.set(entry.slideNumber, part);
+    });
+
+  // Every slide gets a relationship part, and every one of them carries a layout relationship the
+  // reader must ignore, so that finding the notes is a real search rather than taking the first.
+  slides.forEach((_, i) => {
+    const n = i + 1;
+    const notesPart = notesForSlide.get(n);
+    const rels =
+      `<?xml version="1.0"?><Relationships xmlns="${OPC_RELS_NS}">` +
+      `<Relationship Id="rId1" Type="${LAYOUT_REL_TYPE}" Target="../slideLayouts/slideLayout1.xml"/>` +
+      (notesPart
+        ? `<Relationship Id="rId2" Type="${NOTES_REL_TYPE}" Target="../${notesPart.replace("ppt/", "")}"/>`
+        : "") +
+      `</Relationships>`;
+    files[`ppt/slides/_rels/slide${n}.xml.rels`] = strToU8(rels);
+  });
+
   return zipSync(files);
 }
 
@@ -136,6 +173,41 @@ describe("reading a presentation", () => {
   it("drops a notes page that is only the slide number", () => {
     const { pages } = extractPptx(makePptx([["Cover"]], { 1: "1" }));
     expect(pages[0]?.text).toBe("Cover");
+  });
+
+  it("attaches notes to the slide that owns them, not to the slide in the same position", () => {
+    // A deck whose only notes are on slide three stores them in notesSlide1.xml, so pairing the
+    // first notes part with the first slide puts one slide's argument on another slide's page.
+    // Nothing about the output looks wrong when that happens, which is what makes it dangerous:
+    // the deck simply says something it never said.
+    const { pages } = extractPptx(makePptx([["Cover"], ["Approach"], ["Commercials"]], { 3: "margin is thin" }));
+    expect(pages[0]?.text).toBe("Cover");
+    expect(pages[1]?.text).toBe("Approach");
+    expect(pages[2]?.text).toContain("Speaker notes: margin is thin");
+  });
+
+  it("keeps two sets of notes on their own slides when the middle slide has none", () => {
+    const { pages } = extractPptx(
+      makePptx([["One"], ["Two"], ["Three"]], { 1: "first argument", 3: "third argument" }),
+    );
+    expect(pages[0]?.text).toContain("Speaker notes: first argument");
+    expect(pages[1]?.text).toBe("Two");
+    expect(pages[2]?.text).toContain("Speaker notes: third argument");
+  });
+
+  it("takes no notes at all when the slide has no relationships to read", () => {
+    // Guessing by position is what this replaced, so the absence of the relationship part has to
+    // mean "no notes" rather than "fall back to counting".
+    const deck = zipSync({
+      "[Content_Types].xml": strToU8("<Types/>"),
+      "ppt/slides/slide1.xml":
+        strToU8(`<?xml version="1.0"?><p:sld xmlns:p="p" xmlns:a="a"><p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:t>Cover</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>`),
+      "ppt/notesSlides/notesSlide1.xml":
+        strToU8(`<?xml version="1.0"?><p:sld xmlns:p="p" xmlns:a="a"><p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:t>orphaned</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>`),
+    });
+    const { pages } = extractPptx(deck);
+    expect(pages[0]?.text).toBe("Cover");
+    expect(pages[0]?.text).not.toContain("orphaned");
   });
 
   it("says so when a slide carried nothing, rather than returning a silent blank", () => {
