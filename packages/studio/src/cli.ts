@@ -20,12 +20,17 @@ function usage(): never {
                                      comes from --theme, else theme.json here, else a
                                      neutral default.
   extract <file> [--out <file.md>] [--ocr auto|never|force] [--ocr-lang <code>]
+                 [--ocr-tier auto|tiny|small|medium|server] [--ocr-model-path <dir>]
                                      Pull the text out of a PDF, a PowerPoint deck, a Word
                                      document, an image, or a text file, and print it. Use this
                                      to check what was found before spending a model call on it,
                                      which matters most for a scan, where the reading is never
                                      perfect. A scanned page is read as a picture only when it
-                                     carries no text of its own, unless you say otherwise.
+                                     carries no text of its own, unless you say otherwise. The
+                                     output names which engine did the reading. --ocr-tier spends
+                                     a larger recognition model on a scan that came back wrong.
+                                     --ocr-model-path reads the models from a local directory
+                                     instead of fetching them, which is what makes a run offline.
   generate <content> [--out <file>] [--client <name>] [--voice <file.json>] [--voice-md <file.md>]
                      [--provider <${PROVIDER_IDS.join("|")}>] [--model <provider/model>] [--command <bin>]
                      [--portal <url>] [--token <token>] [--ocr auto|never|force]
@@ -75,6 +80,8 @@ function configFlags(rest: string[]): ConfigFlags {
     ocr: flag(rest, "--ocr"),
     ocrLang: flag(rest, "--ocr-lang"),
     ocrLangPath: flag(rest, "--ocr-lang-path"),
+    ocrTier: flag(rest, "--ocr-tier"),
+    ocrModelPath: flag(rest, "--ocr-model-path"),
   };
 }
 
@@ -95,13 +102,19 @@ async function readSource(file: string, config: StudioConfig): Promise<Extracted
   const result = await extractDocument(bytes, {
     filename: file,
     ocr: config.ingest.ocr.value,
-    ocrLang: config.ingest.ocrLang.value,
+    languages: [config.ingest.ocrLang.value],
+    tier: config.ingest.ocrTier.value,
+    modelPath: config.ingest.ocrModelPath.value,
     ocrLangPath: config.ingest.ocrLangPath.value,
     onProgress: warn,
   });
   const where = result.pages.length > 1 ? `, ${result.pages.length} ${result.kind === "pptx" ? "slides" : "pages"}` : "";
-  warn(`read ${file} as ${result.kind}${where}${result.usedOcr ? ", by reading its pictures" : ""}`);
-  for (const w of result.warnings) warn(`  note: ${w}`);
+  // Which engine read the pictures is said out loud, not buried. Two runs of the same scan on
+  // two machines can differ entirely because one had the better engine installed, and without
+  // the name in the output that difference is invisible.
+  const how = result.usedOcr ? `, by reading its pictures with ${result.engine}` : "";
+  warn(`read ${file} as ${result.kind}${where}${how}`);
+  for (const w of result.warnings) warn(`  note: ${w.message}`);
   return result;
 }
 

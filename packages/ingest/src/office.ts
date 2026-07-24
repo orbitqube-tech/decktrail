@@ -1,6 +1,6 @@
 import { unzipSync, strFromU8 } from "fflate";
 import { XMLParser } from "fast-xml-parser";
-import type { ExtractedPage } from "./types.js";
+import type { ExtractedPage, Warning } from "./types.js";
 
 /**
  * Pull the words out of a PowerPoint deck or a Word document.
@@ -84,12 +84,20 @@ function slideOrder(names: string[], prefix: string): string[] {
   return names.filter((n) => n.startsWith(prefix)).sort((a, b) => num(a) - num(b));
 }
 
-export function extractPptx(bytes: Uint8Array): { pages: ExtractedPage[]; warnings: string[] } {
+/**
+ * Read a presentation.
+ *
+ * Warnings come back as codes carrying their sentence, not as sentences alone, so a caller can
+ * count how many slides came back empty or refuse a deck where most of them did. The page number
+ * rides along on every warning that is about one slide, because "a slide carried no text" is
+ * unactionable until you know which slide.
+ */
+export function extractPptx(bytes: Uint8Array): { pages: ExtractedPage[]; warnings: Warning[] } {
   const files = unzipSync(bytes) as Record<string, Uint8Array>;
   const names = Object.keys(files);
   const slides = slideOrder(names, "ppt/slides/slide");
   const notes = slideOrder(names, "ppt/notesSlides/notesSlide");
-  const warnings: string[] = [];
+  const warnings: Warning[] = [];
 
   const pages: ExtractedPage[] = slides.map((name, i) => {
     const xml = readEntry(files, name);
@@ -108,24 +116,45 @@ export function extractPptx(bytes: Uint8Array): { pages: ExtractedPage[]; warnin
       if (meaningful.length > 0) lines.push(`Speaker notes: ${meaningful.join(" ")}`);
     }
 
-    if (lines.length === 0) warnings.push(`slide ${i + 1} carried no text, so nothing was taken from it`);
-    return { n: i + 1, text: lines.join("\n") };
+    if (lines.length === 0) {
+      warnings.push({
+        code: "page_empty",
+        message: `slide ${i + 1} carried no text, so nothing was taken from it`,
+        page: i + 1,
+      });
+    }
+    // The words came out of the file's own XML, so they are the document's text and never
+    // recognised text.
+    return { n: i + 1, text: lines.join("\n"), source: "text_layer" };
   });
 
-  if (pages.length === 0) warnings.push("no slides were found in this presentation");
+  if (pages.length === 0) {
+    warnings.push({ code: "page_empty", message: "no slides were found in this presentation" });
+  }
   return { pages, warnings };
 }
 
-export function extractDocx(bytes: Uint8Array): { pages: ExtractedPage[]; warnings: string[] } {
+/**
+ * Read a document.
+ *
+ * The two ways this comes back empty share a code but not a sentence, on purpose. A file with no
+ * body part at all is malformed or is not really a Word document. A body that parsed and yielded
+ * no paragraphs is an intact document whose content is carried entirely by pictures or embedded
+ * objects. An author who is told only "empty" will go looking in the wrong place.
+ */
+export function extractDocx(bytes: Uint8Array): { pages: ExtractedPage[]; warnings: Warning[] } {
   const files = unzipSync(bytes) as Record<string, Uint8Array>;
   const xml = readEntry(files, "word/document.xml");
-  if (!xml) return { pages: [], warnings: ["this document has no readable body"] };
+  if (!xml) {
+    return { pages: [], warnings: [{ code: "page_empty", message: "this document has no readable body" }] };
+  }
 
   const lines: string[] = [];
   paragraphs(parser.parse(xml), "w:p", lines);
 
   // A Word file has no page breaks that survive without laying the whole thing out, so it comes
   // through as one unit. Claiming page numbers we cannot know would be inventing them.
-  const warnings = lines.length === 0 ? ["this document carried no text"] : [];
-  return { pages: [{ n: 1, text: lines.join("\n") }], warnings };
+  const warnings: Warning[] =
+    lines.length === 0 ? [{ code: "page_empty", message: "this document carried no text" }] : [];
+  return { pages: [{ n: 1, text: lines.join("\n"), source: "text_layer" }], warnings };
 }

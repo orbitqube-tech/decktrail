@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { DEFAULT_PROVIDER_ID, DEFAULT_REPAIR_ATTEMPTS, DEFAULT_GENERATE_TIMEOUT_MS } from "@decktrail/generate";
-import { DEFAULT_OCR_LANG, type OcrMode } from "@decktrail/ingest";
+import { DEFAULT_OCR_LANG, type OcrMode, type OcrTier } from "@decktrail/ingest";
 
 /**
  * Where settings live, and which one wins.
@@ -52,11 +52,18 @@ export interface StudioConfig {
     ocrLang: Resolved<string>;
     /** A local directory of OCR language data, which is what makes a run fully offline. */
     ocrLangPath: Resolved<string | undefined>;
+    /** Which recognition model to spend on a scan. */
+    ocrTier: Resolved<OcrTier>;
+    /** A local directory of recognition model files, which is what makes a run fully offline. */
+    ocrModelPath: Resolved<string | undefined>;
   };
 }
 
 /** The reading modes, named here so a bad value can list what was allowed. */
 export const OCR_MODES: readonly OcrMode[] = ["auto", "never", "force"];
+
+/** The recognition tiers, named here so a bad value can list what was allowed. */
+export const OCR_TIERS: readonly OcrTier[] = ["auto", "tiny", "small", "medium", "server"];
 
 /**
  * How old a cached voice may get before the warning sharpens.
@@ -72,7 +79,13 @@ interface FileShape {
   portal?: { url?: unknown; token?: unknown };
   generate?: { provider?: unknown; model?: unknown; command?: unknown; timeoutMs?: unknown; repairAttempts?: unknown };
   voice?: { cacheMaxAgeDays?: unknown };
-  ingest?: { ocr?: unknown; ocrLang?: unknown; ocrLangPath?: unknown };
+  ingest?: {
+    ocr?: unknown;
+    ocrLang?: unknown;
+    ocrLangPath?: unknown;
+    ocrTier?: unknown;
+    ocrModelPath?: unknown;
+  };
 }
 
 function readConfigFile(dir: string): FileShape | null {
@@ -133,6 +146,8 @@ export interface ConfigFlags {
   ocr?: string;
   ocrLang?: string;
   ocrLangPath?: string;
+  ocrTier?: string;
+  ocrModelPath?: string;
 }
 
 /** Resolve every setting from flags, environment, and the two config files. */
@@ -207,6 +222,14 @@ export function loadConfig(
         home.ingest?.ocrLangPath,
         undefined,
       ),
+      ocrTier: pickOcrTier(flags.ocrTier, env.DT_OCR_TIER, project.ingest?.ocrTier, home.ingest?.ocrTier),
+      ocrModelPath: pickString(
+        flags.ocrModelPath,
+        env.DT_OCR_MODEL_PATH,
+        project.ingest?.ocrModelPath,
+        home.ingest?.ocrModelPath,
+        undefined,
+      ),
     },
   };
 }
@@ -229,6 +252,26 @@ function pickOcrMode(
     throw new Error(`unknown reading mode "${resolved.value}". Known modes: ${OCR_MODES.join(", ")}.`);
   }
   return resolved as Resolved<OcrMode>;
+}
+
+/**
+ * Resolve the recognition tier, refusing anything that is not one of the five.
+ *
+ * Refused for the same reason a misspelt mode is: a bigger tier is what an author reaches for
+ * when a scan came back wrong, and silently ignoring the request would leave them re-reading the
+ * same bad text and believing they had already tried the fix.
+ */
+function pickOcrTier(
+  flag: string | undefined,
+  env: string | undefined,
+  project: unknown,
+  home: unknown,
+): Resolved<OcrTier> {
+  const resolved = pickString(flag, env, project, home, "auto") as Resolved<string>;
+  if (!(OCR_TIERS as readonly string[]).includes(resolved.value)) {
+    throw new Error(`unknown recognition tier "${resolved.value}". Known tiers: ${OCR_TIERS.join(", ")}.`);
+  }
+  return resolved as Resolved<OcrTier>;
 }
 
 /**
@@ -257,5 +300,7 @@ export function describeConfig(config: StudioConfig): string {
     line("ocr", config.ingest.ocr),
     line("ocrLang", config.ingest.ocrLang),
     line("ocrLangPath", config.ingest.ocrLangPath),
+    line("ocrTier", config.ingest.ocrTier),
+    line("ocrModelPath", config.ingest.ocrModelPath),
   ].join("\n");
 }

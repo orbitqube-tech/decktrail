@@ -37,11 +37,19 @@ tmp/
 # ours to redistribute in the repository: each deploy fetches its own copy.
 packages/renderers/assets/fonts/
 
-# OCR language data, fetched by the reading engine on first use and cached beside whatever
-# invoked it. Several megabytes each, regenerable, and not ours to redistribute. Point
-# DT_OCR_LANG_PATH at a local copy to keep a machine offline; do not commit one.
+# OCR language data and recognition model weights, fetched by the reading engine on first use
+# and cached beside whatever invoked it. Several megabytes each, regenerable, and not ours to
+# redistribute. Point DT_OCR_MODEL_PATH at a local copy to keep a machine offline; do not commit
+# one.
 *.traineddata
 *.traineddata.gz
+*.onnx
+*.ort
+
+# The evaluation corpus is drawn from a committed script rather than committed as images, so
+# ground truth is always derived from the same source as the picture it describes. Run
+# packages/ingest/evals/generate-corpus.ts to rebuild it.
+packages/ingest/evals/tmp/
 
 # Rendered output from trying the CLI in the repo root.
 *.deck.html

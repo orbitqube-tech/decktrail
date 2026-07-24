@@ -11,6 +11,12 @@ overrides:
   "@esbuild-kit/core-utils>esbuild": "0.25.12"
 allowBuilds:
   esbuild: true
+  # The optional recognition engine. Its install script exists to download the GPU execution
+  # provider binaries, which are too large to ship on the registry. The processor binaries this
+  # project actually uses are already inside the package, and nothing here runs recognition on a
+  # GPU, so the script is denied and the engine still works. Listed even though the package is
+  # not installed by default, so that installing it later needs no answer to a prompt.
+  onnxruntime-node: false
   # Its only install script prints a funding banner. Nothing about the engine needs it to run,
   # so it is denied rather than allowed: an install script that earns nothing should not execute.
   tesseract.js: false
