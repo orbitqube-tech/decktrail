@@ -12,13 +12,17 @@ import type { OcrEngineOptions, OcrPageResult, OcrRun } from "../types.js";
  *
  * This is the fallback engine rather than the preferred one. It is here because it is always
  * installed: it is a plain dependency with no native binary behind it, so it works on any machine
- * that can run the rest of the package. It reads a poor scan noticeably worse than the PP-OCR
- * engine does, which is why the registry in `./index.ts` reaches for that one first and says so
- * out loud when it has to settle for this one.
+ * that can run the rest of the package. It reads dense text and figures noticeably worse than the
+ * PP-OCR engine does, which is why the registry in `./index.ts` reaches for that one first and
+ * says so out loud when it has to settle for this one. It is not worse everywhere, and on a page
+ * that is even slightly rotated it is the better reader of the two: see `evals/README.md` for the
+ * run those statements come from.
  *
  * One honest caveat, which the documentation must carry too: the engine downloads its language
- * data the first time it runs, unless `modelPath` points at a local copy. The document itself is
- * never uploaded, but the first OCR run is not an offline operation.
+ * data the first time it runs, unless `ocrLangPath` points at a local copy. That option is
+ * deliberately not `modelPath`: the two engines want different files, and handing this one a
+ * directory of the other's recognition models would find nothing and report a confusing failure.
+ * The document itself is never uploaded, but the first OCR run is not an offline operation.
  */
 
 /** The language assumed when the caller names none. */
@@ -69,7 +73,11 @@ export async function tesseractEngine(images: Uint8Array[], opts: OcrEngineOptio
   if (images.length === 0) return { pages: [], engine };
 
   opts.onProgress?.(`starting the reader for ${langs}, which downloads its language data the first time`);
-  const worker = await createWorker(langs, undefined, opts.modelPath ? { langPath: opts.modelPath } : undefined);
+  const worker = await createWorker(
+    langs,
+    undefined,
+    opts.ocrLangPath ? { langPath: opts.ocrLangPath } : undefined,
+  );
 
   try {
     const pages: OcrPageResult[] = [];
