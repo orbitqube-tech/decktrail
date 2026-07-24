@@ -1,5 +1,14 @@
 packages:
   - "packages/*"
+overrides:
+  # drizzle-kit still pulls the deprecated @esbuild-kit chain, which pins esbuild 0.18.20.
+  # That version lets any website talk to a running esbuild dev server and read the response
+  # (GHSA-67mh-4wv8-2f99). Nothing here runs an esbuild dev server, and drizzle-kit is a
+  # development dependency, so there is no production exposure. It is still the last open
+  # advisory, and the upstream chain is abandoned, so pin the nested copy forward instead of
+  # waiting for a fix that is not coming. 0.25.12 is the version drizzle-kit already depends
+  # on directly, so this deduplicates rather than adding a package.
+  "@esbuild-kit/core-utils>esbuild": "0.25.12"
 allowBuilds:
   esbuild: true
   # Its only install script prints a funding banner. Nothing about the engine needs it to run,
