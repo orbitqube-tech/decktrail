@@ -1,6 +1,35 @@
 import { describe, it, expect } from "vitest";
 import { zipSync, strToU8 } from "fflate";
-import { detectKind, extractPptx, extractDocx, extractPdfText, extract, MIN_CHARS_PER_PAGE_FOR_TEXT_LAYER } from "./index.js";
+import {
+  detectKind,
+  extractPptx,
+  extractDocx,
+  extractPdfText,
+  extract,
+  CONTRACT_VERSION,
+  MIN_CHARS_PER_PAGE_FOR_TEXT_LAYER,
+} from "./index.js";
+import type { OcrEngine, Warning, WarningCode } from "./types.js";
+
+/** Warnings read as one string, for asserting on the wording the author actually sees. */
+const said = (warnings: Warning[]): string => warnings.map((w) => w.message).join(" ");
+
+/** Just the codes, for asserting on what a consumer can act on rather than on prose. */
+const codes = (warnings: Warning[]): WarningCode[] => warnings.map((w) => w.code);
+
+/**
+ * A stand-in engine that returns exactly what a test tells it to.
+ *
+ * The alternative is a test that downloads a recognition model and reads a real scan, which is
+ * slow, needs the network, and would be testing somebody else's engine rather than our decision
+ * about when to call it and what to say afterwards.
+ */
+const engineReturning = (texts: string[], engine = "test-engine/fixture"): OcrEngine => {
+  return async (images) => ({
+    pages: images.map((_, i) => ({ text: texts[i] ?? "" })),
+    engine,
+  });
+};
 
 /**
  * A real PDF, assembled here rather than stubbed.
@@ -112,7 +141,11 @@ describe("reading a presentation", () => {
   it("says so when a slide carried nothing, rather than returning a silent blank", () => {
     const { pages, warnings } = extractPptx(makePptx([["Cover"], []]));
     expect(pages[1]?.text).toBe("");
-    expect(warnings.join(" ")).toMatch(/slide 2 carried no text/);
+    expect(said(warnings)).toMatch(/slide 2 carried no text/);
+    // The code is what a consumer acts on, and the page number is what sends the author to the
+    // right slide. A sentence alone gives them neither.
+    expect(warnings[0]?.code).toBe("page_empty");
+    expect(warnings[0]?.page).toBe(2);
   });
 
   it("does not repeat a line once per run inside its paragraph", () => {
@@ -131,7 +164,7 @@ describe("reading a document", () => {
   it("reports a body it could not read instead of returning empty", () => {
     const notADocx = zipSync({ "word/other.xml": strToU8("<a/>") });
     const { warnings } = extractDocx(notADocx);
-    expect(warnings.join(" ")).toMatch(/no readable body/);
+    expect(said(warnings)).toMatch(/no readable body/);
   });
 });
 
@@ -159,7 +192,7 @@ describe("reading a PDF", () => {
 });
 
 describe("deciding when to read a document as pictures", () => {
-  const neverCalled = async (): Promise<string[]> => {
+  const neverCalled = async (): Promise<never> => {
     throw new Error("optical character recognition was run when it should not have been");
   };
 
@@ -173,21 +206,35 @@ describe("deciding when to read a document as pictures", () => {
   it("reads a scanned PDF as pictures, and says that it did", async () => {
     const out = await extract(makePdf([]), {
       rasterizeImpl: async () => [PNG, PNG],
-      ocrImpl: async (images) => images.map((_, i) => `text from page ${i + 1}`),
+      ocrImpl: engineReturning(["text from page 1", "text from page 2"]),
     });
     expect(out.usedOcr).toBe(true);
     expect(out.pages).toHaveLength(2);
     expect(out.text).toContain("[Page 1]");
     expect(out.text).toContain("text from page 2");
-    expect(out.warnings.join(" ")).toMatch(/carries no text of its own/);
+    expect(codes(out.warnings)).toContain("no_text_layer");
     // The author has to be told, because OCR output is plausible and wrong in ways prose is not.
-    expect(out.warnings.join(" ")).toMatch(/expect mistakes/);
+    expect(codes(out.warnings)).toContain("ocr_used");
+    expect(said(out.warnings)).toMatch(/expect mistakes/);
+    // Every page says where its text came from, because one PDF routinely mixes a born-digital
+    // page with a scanned insert and only the page knows which it was.
+    expect(out.pages.map((p) => p.source)).toEqual(["ocr", "ocr"]);
   });
 
   it("obeys a request never to read pictures, and warns rather than returning a quiet blank", async () => {
     const out = await extract(makePdf([]), { ocr: "never", ocrImpl: neverCalled });
     expect(out.usedOcr).toBe(false);
-    expect(out.warnings.join(" ")).toMatch(/appears to be a scan/);
+    expect(said(out.warnings)).toMatch(/appears to be a scan/);
+    expect(codes(out.warnings)).toContain("no_text_layer");
+  });
+
+  it("separates a scan with nothing on it from a scan wearing a thin text layer", async () => {
+    // Both are scans and both need reading as pictures, but they are not the same document and
+    // the advice differs, so collapsing them into one warning throws away what the author needs.
+    const bare = await extract(makePdf([]), { ocr: "never", ocrImpl: neverCalled });
+    const thin = await extract(makePdf(["7"]), { ocr: "never", ocrImpl: neverCalled });
+    expect(codes(bare.warnings)).toContain("no_text_layer");
+    expect(codes(thin.warnings)).toContain("text_layer_thin");
   });
 
   it("forces OCR even over a text layer, for an export whose text is worse than its picture", async () => {
@@ -195,20 +242,73 @@ describe("deciding when to read a document as pictures", () => {
     const out = await extract(pdf, {
       ocr: "force",
       rasterizeImpl: async () => [PNG],
-      ocrImpl: async () => ["what the page actually looks like"],
+      ocrImpl: engineReturning(["what the page actually looks like"]),
     });
     expect(out.usedOcr).toBe(true);
     expect(out.text).toBe("what the page actually looks like");
   });
 
   it("reads a bare image, and refuses to when told not to", async () => {
-    const read = await extract(PNG, { ocrImpl: async () => ["scanned heading"] });
+    const read = await extract(PNG, { ocrImpl: engineReturning(["scanned heading"]) });
     expect(read.usedOcr).toBe(true);
     expect(read.text).toBe("scanned heading");
 
     const skipped = await extract(PNG, { ocr: "never", ocrImpl: neverCalled });
     expect(skipped.text).toBe("");
-    expect(skipped.warnings.join(" ")).toMatch(/reading was turned off/);
+    expect(said(skipped.warnings)).toMatch(/reading was turned off/);
+    expect(codes(skipped.warnings)).toContain("ocr_disabled");
+  });
+});
+
+describe("saying how the reading was done", () => {
+  it("names the engine that actually read the pictures", async () => {
+    // Two runs of the same scan on two machines can differ entirely because one had the better
+    // engine installed. Without the name on the result that difference is invisible.
+    const out = await extract(PNG, { ocrImpl: engineReturning(["heading"], "some-engine/v9") });
+    expect(out.engine).toBe("some-engine/v9");
+  });
+
+  it("reports no engine when nothing was recognised, rather than naming one that never ran", async () => {
+    const out = await extract(strToU8("plain notes"));
+    expect(out.engine).toBe("none");
+    expect(out.usedOcr).toBe(false);
+  });
+
+  it("leaves confidence absent rather than reporting zero when there is nothing to score", async () => {
+    // Zero means recognised and terrible. Absent means there was nothing to score. Reporting the
+    // first for the second makes a blank page look like a page the engine read and got wrong.
+    const out = await extract(PNG, { ocrImpl: engineReturning(["heading"]) });
+    expect(out.confidence).toBeUndefined();
+    expect(out.pages[0]?.confidence).toBeUndefined();
+  });
+
+  it("never claims a model was called, because this package calls none", async () => {
+    const out = await extract(PNG, { ocrImpl: engineReturning(["heading"]) });
+    expect(out.usedAi).toBe(false);
+    expect(codes(out.warnings)).not.toContain("ai_used");
+  });
+
+  it("stamps the contract version, so a consumer can refuse a shape it does not know", async () => {
+    const out = await extract(strToU8("plain notes"));
+    expect(out.contractVersion).toBe(CONTRACT_VERSION);
+  });
+});
+
+describe("stopping early", () => {
+  it("says so when a page limit dropped content, rather than truncating quietly", async () => {
+    // A deck that quietly stops at page two looks exactly like a deck that was two pages long,
+    // and the author would have no reason to go looking for the rest.
+    const deck = await extract(makePptx([["One"], ["Two"], ["Three"]]), { maxPages: 2 });
+    expect(deck.pages).toHaveLength(2);
+    expect(deck.truncated).toBe(true);
+    expect(codes(deck.warnings)).toContain("truncated");
+    expect(said(deck.warnings)).toMatch(/only the first 2 of 3/);
+  });
+
+  it("does not report truncation when everything was read", async () => {
+    const deck = await extract(makePptx([["One"], ["Two"]]), { maxPages: 5 });
+    expect(deck.truncated).toBe(false);
+    expect(codes(deck.warnings)).not.toContain("truncated");
   });
 });
 
@@ -226,7 +326,7 @@ describe("what comes out the other end", () => {
     expect(deck.text).toContain("[Slide 2]");
     const doc = await extract(makePdf([]), {
       rasterizeImpl: async () => [PNG, PNG],
-      ocrImpl: async (i) => i.map(() => "page text"),
+      ocrImpl: engineReturning(["page text", "page text"]),
     });
     expect(doc.text).toContain("[Page 1]");
   });

@@ -87,10 +87,25 @@ async function loadPdf(bytes: Uint8Array): Promise<OpenPdf> {
   return { doc: await task.promise, release: () => task.destroy() };
 }
 
+/**
+ * What the text layer turned out to be, as measurements rather than as a verdict.
+ *
+ * `hasTextLayer` on its own cannot tell the two failing documents apart, and they are not the
+ * same document. A photograph of a page carries no characters at all. A bad export carries a
+ * handful: a running header, a page number, the debris of a font that did not embed. The first
+ * author needs to be told their file is a scan; the second needs to be told their text layer
+ * exists but is too thin to trust, because that is a fixable export problem. So the raw numbers
+ * come back and the pipeline turns them into the warning, which keeps the decision in one place
+ * instead of two.
+ */
 export interface PdfText {
   pages: ExtractedPage[];
   /** True when the document's own text is substantial enough to use as-is. */
   hasTextLayer: boolean;
+  /** Characters of text layer per page, averaged over every page. Zero for a document with no pages. */
+  averageCharsPerPage: number;
+  /** True when any page carried any text at all, however little. */
+  hasAnyText: boolean;
 }
 
 export async function extractPdfText(bytes: Uint8Array): Promise<PdfText> {
@@ -107,12 +122,20 @@ export async function extractPdfText(bytes: Uint8Array): Promise<PdfText> {
         .join(" ")
         .replace(/\s+/g, " ")
         .trim();
-      pages.push({ n, text });
+      // Every page says where its text came from. This function only ever reads the file's own
+      // text layer, so the label is fixed here; anything that substitutes recognised text for a
+      // page owns relabelling it.
+      pages.push({ n, text, source: "text_layer" });
       page.cleanup();
     }
     const total = pages.reduce((sum, p) => sum + p.text.length, 0);
     const average = pages.length > 0 ? total / pages.length : 0;
-    return { pages, hasTextLayer: average >= MIN_CHARS_PER_PAGE_FOR_TEXT_LAYER };
+    return {
+      pages,
+      hasTextLayer: average >= MIN_CHARS_PER_PAGE_FOR_TEXT_LAYER,
+      averageCharsPerPage: average,
+      hasAnyText: total > 0,
+    };
   } finally {
     await release();
   }
@@ -125,8 +148,18 @@ export async function extractPdfText(bytes: Uint8Array): Promise<PdfText> {
  * scanned PDF actually needs rasterising. Most people never ingest one, and making everybody
  * install a native binary for a path they will not take is a poor trade. When it is missing the
  * failure names the package and what to do, rather than surfacing a module-resolution error.
+ *
+ * `maxPages` is a ceiling on how many pages are rendered, because rendering is the expensive half
+ * of reading a scan and a four hundred page archive would otherwise be rasterised in full before
+ * anybody could stop it. There is no default: omitting it renders the whole document. A ceiling
+ * invented here would drop pages that the caller never asked to lose, and it would do it
+ * silently, so the choice stays with the caller who can also report the truncation.
  */
-export async function rasterizePdf(bytes: Uint8Array, onProgress?: (m: string) => void): Promise<Uint8Array[]> {
+export async function rasterizePdf(
+  bytes: Uint8Array,
+  onProgress?: (m: string) => void,
+  maxPages?: number,
+): Promise<Uint8Array[]> {
   let createCanvas: (w: number, h: number) => { getContext(t: "2d"): unknown; encode(f: "png"): Promise<Buffer> };
   try {
     ({ createCanvas } = (await import("@napi-rs/canvas")) as unknown as {
@@ -142,8 +175,13 @@ export async function rasterizePdf(bytes: Uint8Array, onProgress?: (m: string) =
   const { doc, release } = await loadPdf(bytes);
   try {
     const images: Uint8Array[] = [];
-    for (let n = 1; n <= doc.numPages; n++) {
-      onProgress?.(`rendering page ${n} of ${doc.numPages} for reading`);
+    // An undefined ceiling means the whole document, and a ceiling above the page count is not an
+    // error: a caller applying one limit to a batch of files should not have to know how long each
+    // one is. The progress message counts against what will actually be rendered, so a capped run
+    // does not appear to stop early.
+    const last = maxPages === undefined ? doc.numPages : Math.min(doc.numPages, maxPages);
+    for (let n = 1; n <= last; n++) {
+      onProgress?.(`rendering page ${n} of ${last} for reading`);
       const page = await doc.getPage(n);
       const viewport = page.getViewport({ scale: OCR_RENDER_SCALE });
       const canvas = createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height));

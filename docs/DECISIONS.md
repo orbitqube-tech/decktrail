@@ -774,3 +774,80 @@ pdfjs is Apache-2.0 and leaves that option open.
 - **Rendering a scanned PDF needs an optional native package.** `@napi-rs/canvas` is an optional
   dependency, because most people never ingest a scan and should not install a binary for a path
   they will not take. Its absence fails with a message naming it.
+
+---
+
+## D27. The better reader is one install away, and the default install stays small
+
+**Decision:** Refines D26. Both halves of D26 stand unchanged: recognition runs on the author's
+machine and never on the portal, and a document's own text layer is always preferred to reading
+its pictures. What this decides is which engine reads the pictures, and what that engine is
+allowed to cost somebody who never reads one.
+
+Recognition sits behind one interface with two engines behind it:
+
+| Engine | Packages | Installed size | When it runs |
+|---|---|---|---|
+| PP-OCR (a family of text recognition models) on ONNX Runtime (Open Neural Network Exchange, a portable format for running a trained model) | `ppu-paddle-ocr`, MIT licensed, plus `onnxruntime-node` | roughly 312 MB, of which `onnxruntime-node` alone is roughly 259 MB | whenever it is installed |
+| Tesseract compiled to WebAssembly | `tesseract.js` | already present | whenever the above is not |
+
+PP-OCR is the better reader and is an **optional** dependency. Tesseract is always present and is
+the fallback. Every result names the engine that produced it, and a result produced by the
+fallback carries a warning naming the fallback that ran and what to install to do better.
+
+The sizes above were measured by installing the packages into a clean directory. They are not
+estimates, because a number that decides a default has to be a measurement.
+
+**Why:**
+1. **It reads dense text and figures materially better, which is where the damage is.** Measured on
+   the generated corpus: on a table of figures it read every number correctly at its medium tier
+   where the fallback got 64 percent of them; on small dense text it made roughly a twentieth of
+   the character errors. A misread figure is the failure that costs something, so this is the
+   dimension worth 312 MB. It is **not** better everywhere, and the next point is the price.
+2. **A third of a gigabyte cannot be in everybody's install.** The product's promise is a single
+   clean clone that runs. Most people ingest prose, a PDF with a text layer, or nothing at all,
+   and a scan is the path they never take. Making the whole install pay for it breaks the promise
+   that gets people to try it.
+3. **It is still local.** No document is sent anywhere by either engine. A hosted vision service
+   would read a poor scan better than both, and is rejected for exactly the reason D26 gave:
+   sending a client's document to a third party to be read breaks the one promise the product
+   makes about where your content goes.
+4. **MIT keeps D3 open.** `ppu-paddle-ocr` is MIT licensed, so it does not have to be relicensed
+   from its vendor before a commercial licence is possible. This is the same test pdfjs passed in
+   D26.
+
+**Consequences:**
+- **Neither engine wins outright, and a rotated page is where the better one loses.** On a page
+  skewed by three degrees the fallback read it almost perfectly and kept every figure, while
+  PP-OCR returned two lines out of twelve and lost every number, reporting a mean confidence of
+  0.83 while doing it. The cause is measured rather than guessed: the engine's own confidence
+  filter discards the low scoring detections that a rotated line produces, and lowering that
+  filter on the same page recovered all twelve lines. **A confident, mostly empty reading is the
+  worst failure this package has**, because it looks exactly like a good one. The filter has been
+  left at the engine's own default rather than lowered to make one test page pass, since a lower
+  filter also admits logos and rule lines as text, and no run yet measures that trade. Until it
+  does, `extract` exists to be read and the warning on every recognised result is the mitigation.
+- **The engine's result cache is turned off, and that is a correctness fix.** It is keyed on the
+  picture and not on the tier the picture was read with, so re-reading a bad scan at a larger tier
+  returned the first reading and reported it as the larger tier. It was found because three
+  different models produced text and a confidence identical to sixteen decimal places, which is
+  not a thing three different models do.
+- **The cost accepted: the best available reading is not what a default install gets.** A person
+  who clones the repository, ingests a scan, and never reads the warning gets the fallback's
+  reading and may not know a better one exists. The warning naming the fallback and the install is
+  the whole of the mitigation, so it is not decoration and must not be softened.
+- **The first OCR run is still not offline.** The recognition models, roughly 6 MB, are downloaded
+  and cached the first time they are needed, unless a local model directory is configured. The
+  document itself is never uploaded. This is the same caveat D26 carried about language data, it
+  is still true, and it does not quietly leave the documentation.
+- **The result shape is versioned and structured, so a caller can act on it.** The result carries
+  a contract version, the engine that read it, and a confidence. Every warning carries a stable
+  code rather than a sentence, because a sentence can only be shown to a person while a code can
+  be tested for and counted. Every page records whether its text came from the file's own text
+  layer or from recognition, per page rather than per document, because one PDF routinely mixes a
+  born-digital page with a scanned insert and the reader needs to know which page to distrust.
+- **Numbers that decide behaviour are measured.** An evaluation harness in `packages/ingest`
+  measures character error rate, word error rate, numeric accuracy, and reading order fidelity
+  against a generated corpus. Numeric accuracy is called out separately from character error rate
+  because a fee misread by one digit is a different kind of wrong from a misspelt heading, and an
+  aggregate error rate hides it.
