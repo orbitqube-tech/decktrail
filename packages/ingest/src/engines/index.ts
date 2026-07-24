@@ -5,10 +5,15 @@ import type { OcrEngineOptions, OcrRun, Warning } from "../types.js";
 /**
  * Choose which recognition engine actually runs, and say so when the choice was forced.
  *
- * Two engines read pictures here and they are not equals. PP-OCR is the accurate one and it sits
- * behind a large optional package with a native component, which plenty of people will not have
- * installed and should not have to. Tesseract is a plain dependency that is always present, and
- * it reads a poor scan noticeably worse.
+ * Two engines read pictures here and they are not equals. PP-OCR reads dense text and figures far
+ * better, and it sits behind a large optional package with a native component that plenty of
+ * people will not have installed and should not have to. Tesseract is a plain dependency that is
+ * always present. Neither wins everywhere: the measured exception is a page that is even slightly
+ * rotated, which Tesseract reads better than PP-OCR does. `evals/README.md` holds the run.
+ *
+ * PP-OCR is preferred anyway, because the failure that costs something is a misread figure and
+ * that is the dimension it wins by the widest margin. Preferring it is a judgement, and it is
+ * recorded as one in `docs/DECISIONS.md` rather than dressed up as an obvious fact.
  *
  * That gap is the entire reason this file exists. Falling back quietly would produce the failure
  * this package is built to avoid: text that is subtly wrong reads exactly like text that is
@@ -53,10 +58,10 @@ export async function runBestEngine(images: Uint8Array[], opts: OcrEngineOptions
           // needs more than one optional package, and naming the wrong one sends the reader to
           // install something they already have.
           message:
-            `the more accurate PP-OCR engine could not be loaded because ${error.missingPackage} is ` +
-            `not installed, so ${run.engine} read this document instead, and it reads a poor scan ` +
-            `noticeably worse. Install ${error.missingPackage} to get the better engine, or read ` +
-            "the pages this run produced before trusting them.",
+            `the PP-OCR engine could not be loaded because ${error.missingPackage} is not ` +
+            `installed, so ${run.engine} read this document instead. It reads dense text and ` +
+            `figures noticeably worse, so check any figure that matters before you send it. ` +
+            `Install ${error.missingPackage} to read with PP-OCR instead.`,
         },
       ],
     };

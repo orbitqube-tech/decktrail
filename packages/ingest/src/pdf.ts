@@ -15,12 +15,18 @@ import type { ExtractedPage } from "./types.js";
  */
 
 /**
- * How much text a page must yield before its text layer is believed.
+ * How much text a page must yield, on average across the document, before its text layer is
+ * believed.
  *
  * A scanned page is not always empty. It often carries a stray header, a page number, or a few
  * characters of junk from a failed embedded font, so a simple "is it empty" test passes a scan
  * straight through as a real document. Forty characters is comfortably below any genuine page of
  * prose and comfortably above that noise.
+ *
+ * The comparison is against the document mean and not against each page, which is a deliberate
+ * limit worth knowing: a document that opens with a dense born-digital page and continues with
+ * ninety-nine scanned ones can average its way past this check. Per-page recognition is not
+ * decided here, so the cost is a document read as text when parts of it needed pictures.
  */
 export const MIN_CHARS_PER_PAGE_FOR_TEXT_LAYER = 40;
 
@@ -165,10 +171,14 @@ export async function rasterizePdf(
     ({ createCanvas } = (await import("@napi-rs/canvas")) as unknown as {
       createCanvas: (w: number, h: number) => { getContext(t: "2d"): unknown; encode(f: "png"): Promise<Buffer> };
     });
-  } catch {
+  } catch (error) {
+    // The original error is carried rather than discarded. A native package that is installed but
+    // whose binary will not load fails here too, and rewriting that as "install it" sends someone
+    // to reinstall a package they already have while the real reason goes unseen.
     throw new Error(
-      "this PDF is a scan, so reading it needs the optional @napi-rs/canvas package to turn its " +
-        "pages into images. Install it, or pass a text-based file instead.",
+      "reading this PDF as pictures needs the optional @napi-rs/canvas package to turn its pages " +
+        "into images. Install it, or pass a file whose text can be read directly.",
+      { cause: error },
     );
   }
 

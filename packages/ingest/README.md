@@ -151,12 +151,16 @@ subtly wrong reads exactly like text that is right.
 | `no_text_layer` | A PDF carried no usable text of its own. |
 | `text_layer_thin` | A text layer existed but fell below the characters-per-page floor, so it was treated as a scan. |
 | `ocr_disabled` | Recognition was needed and the mode was `never`, so little or nothing came back. |
-| `low_confidence` | The result fell below the confidence floor. |
 | `page_empty` | A page yielded nothing. |
 | `truncated` | A cap dropped content, naming what was dropped. |
-| `format_partial` | The format carries more than text could capture, for example a chart or an embedded object. |
-| `engine_unavailable` | The requested engine could not be loaded, naming the fallback taken. |
-| `ai_used` | A model was called. This package never raises it; the code exists so a result stays readable by a consumer that does call one. |
+| `engine_unavailable` | The preferred engine could not be loaded, naming the fallback that ran. |
+
+Three further codes are part of the vocabulary and are **never raised by this package today**. They
+are listed so that a consumer can handle the full set without waiting on one that cannot arrive:
+`low_confidence`, which needs a confidence floor and no floor exists here yet, because no run has
+measured where one belongs; `format_partial`, for a format carrying more than text could capture;
+and `ai_used`, which exists so a result stays readable by a consumer that does call a model. This
+package calls none.
 
 ## Recognised text can be wrong
 

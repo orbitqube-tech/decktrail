@@ -9,7 +9,7 @@ import {
   CONTRACT_VERSION,
   MIN_CHARS_PER_PAGE_FOR_TEXT_LAYER,
 } from "./index.js";
-import type { OcrEngine, Warning, WarningCode } from "./types.js";
+import type { OcrEngine, OcrEngineOptions, Warning, WarningCode } from "./types.js";
 
 /** Warnings read as one string, for asserting on the wording the author actually sees. */
 const said = (warnings: Warning[]): string => warnings.map((w) => w.message).join(" ");
@@ -291,6 +291,32 @@ describe("saying how the reading was done", () => {
   it("stamps the contract version, so a consumer can refuse a shape it does not know", async () => {
     const out = await extract(strToU8("plain notes"));
     expect(out.contractVersion).toBe(CONTRACT_VERSION);
+  });
+});
+
+describe("handing the engine what it was given", () => {
+  it("passes the model directory and the language directory through separately", async () => {
+    // These are two different assets for two different engines, and they were briefly the same
+    // option. Pointing one engine at the other's directory finds nothing and reports a confusing
+    // failure, and the flag that fed it was dead with nothing to notice.
+    let seen: OcrEngineOptions | undefined;
+    const recording: OcrEngine = async (images, opts) => {
+      seen = opts;
+      return { pages: images.map(() => ({ text: "read" })), engine: "recording/fixture" };
+    };
+
+    await extract(PNG, {
+      ocrImpl: recording,
+      modelPath: "/models/ppocr",
+      ocrLangPath: "/models/tessdata",
+      tier: "medium",
+      languages: ["deu"],
+    });
+
+    expect(seen?.modelPath).toBe("/models/ppocr");
+    expect(seen?.ocrLangPath).toBe("/models/tessdata");
+    expect(seen?.tier).toBe("medium");
+    expect(seen?.languages).toEqual(["deu"]);
   });
 });
 
