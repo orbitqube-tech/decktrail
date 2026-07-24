@@ -731,3 +731,46 @@ progress chrome on stderr; and `--format json` emits raw session events rather t
 so it is the wrong flag here. On Windows the tool installs as an npm shim, which Node refuses to
 execute directly, so the spawn helper resolves the command through PATH and uses a shell only for
 `.cmd` and `.bat`.
+
+---
+
+## D26. Ingestion runs on your machine, reads text before pictures, and still never converts
+
+**Decision:** Implements D4, which decided the principle and was never built. `decktrail generate`
+now accepts a PDF, a PowerPoint deck, a Word document, or an image, not only prose. A new
+`packages/ingest` pulls the words out, and `decktrail extract` shows you what it found before you
+spend a model call on it.
+
+Three things are settled here:
+
+1. **It runs on the author's machine, never on the portal.** This is the same half of D9 that D25
+   left standing. The server parses no uploaded file, so it gains no new attack surface from one.
+2. **Text first, pictures only when there is no text.** A document's own text layer is read and
+   measured; optical character recognition (OCR, reading words off a picture) runs only when that
+   text is missing, or when the author forces it. Running OCR over a document that already carries
+   text is slower and worse than reading what is already there.
+3. **The promise is still re-authoring, not conversion.** Layout, styling, masters and anything
+   carried purely by an image do not survive, exactly as D4 said. What survives is the substance,
+   which is then rebuilt in the author's own layouts and brand.
+
+**Why OCR is local:** the engine is Tesseract compiled to WebAssembly, so it is an ordinary
+package rather than a system install. A hosted vision service would read a poor scan better, and
+was rejected: sending a client's document to a third party to be read breaks the one promise the
+product makes about where your content goes.
+
+**Why pdfjs and not mupdf:** mupdf is the better renderer and is AGPL-3.0-or-later. DeckTrail is
+already AGPL, so it would be legal, but D3 reserves the right to sell a commercial licence later
+and an AGPL-only dependency would have to be relicensed from its vendor before that was possible.
+pdfjs is Apache-2.0 and leaves that option open.
+
+**Consequences:**
+- **OCR is honest about being imperfect.** A real scan of "Pilot fee is 18 lakh rupees" came back
+  as "Pilotfee is I 8 lakh rupees" in testing. Every OCR result carries a warning, and `extract`
+  exists so the author reads it before a model does.
+- **Nothing readable is a failure, not an empty success.** A deck of pictures with no text yields
+  no deck, and says so, rather than producing an empty one.
+- **The first OCR run is not offline.** The engine downloads its language data once unless
+  `DT_OCR_LANG_PATH` points at a local copy. The document itself is never uploaded.
+- **Rendering a scanned PDF needs an optional native package.** `@napi-rs/canvas` is an optional
+  dependency, because most people never ingest a scan and should not install a binary for a path
+  they will not take. Its absence fails with a message naming it.

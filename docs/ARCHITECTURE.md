@@ -13,7 +13,10 @@ describes. Check before you rely on it.
 
 **The studio.** Runs on the user's machine. A Claude Code skill plus a command line tool.
 Takes content in, produces a deck IR (intermediate representation) out, and pushes it to a
-portal. Generation itself lives in its own package behind a provider interface, and ships with
+portal. The content can be prose or an existing document (a PDF, a PowerPoint deck, a Word file,
+or a scan): those are read on the user's machine and re-authored, never converted, per
+`DECISIONS.md` D4 and D26. The portal parses no uploaded file, so it gains no attack surface
+from one. Generation itself lives in its own package behind a provider interface, and ships with
 two backends: the user's own Claude Code login (a Claude Pro or Max subscription, the default),
 and the OpenCode command line tool, which reaches a model on the user's own hardware or a free
 tier. Either way DeckTrail holds no application programming interface (API) key of its own: the

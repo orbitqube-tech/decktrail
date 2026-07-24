@@ -6,6 +6,7 @@ export {
   describeConfig,
   CONFIG_DIR_NAME,
   CONFIG_FILE_NAME,
+  OCR_MODES,
   DEFAULT_VOICE_CACHE_MAX_AGE_DAYS,
   type StudioConfig,
   type ConfigFlags,

@@ -53,6 +53,7 @@ The second and third lists are the point. Any product page can tell you what it 
 | | |
 |---|---|
 | **From your notes** | `decktrail generate notes.md` writes the deck on your machine, and the portal never sees your content. By default it runs **your own Claude Code login**: no key, no per-token cost. `--provider opencode` runs the OpenCode command line tool instead, which reaches a model on your own hardware, its free tier, or a hosted one. |
+| **From a document you already have** | Point it at a PDF, a PowerPoint deck, a Word document, or a scan: `decktrail generate proposal.pdf`. The text is pulled out on your machine, and a scanned page is read as a picture only when it carries no text of its own. `decktrail extract` shows you what was found first, which matters for a scan, where the reading is never perfect. |
 | **Layouts, not CSS** | The model picks a layout and fills its slots. It cannot emit CSS or invent structure, so it cannot produce something broken or unbrandable. |
 | **Write it by hand instead** | The IR is plain JSON. `decktrail validate` checks it. The generator is optional. |
 
@@ -98,7 +99,7 @@ Not "not yet". These are refusals.
 | **Stop a determined person copying the text** | Anti-copy is friction. Devtools beats it in seconds. It is deterrence against the careless. |
 | **Claim to be AI-proof** | It is not, cannot be, and the moment it claimed to be, it would deserve the takedown it got. |
 | **Watch your clients for you** | No rendered deck ever contacts a domain this project controls. Doing so would mean we could see who reads your decks, which is exactly what this product exists to tell you not to accept. |
-| **Faithfully import your PowerPoint** | Upload the content and DeckTrail rebuilds it in your brand and its layouts. Pixel-faithful PPTX import is a multi-year tarpit, and nobody actually wants their 2019 deck preserved exactly. |
+| **Faithfully import your PowerPoint** | `decktrail generate old-deck.pptx` reads the substance out and rebuilds it in your brand and layouts. What it will not do is preserve the original: pixel-faithful PPTX import is a multi-year tarpit, and nobody actually wants their 2019 deck kept exactly as it was. Layout, masters, and anything carried only by a picture do not survive. |
 | **Run your generation on our servers** | Version 1 generation is your machine, your subscription. The portal holds no model credentials. |
 
 ---

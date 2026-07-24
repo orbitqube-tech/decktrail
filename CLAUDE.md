@@ -90,6 +90,7 @@ also pins the author to the maintainer, so **do not enable it on a fork**; see
 | `packages/renderers` | Pure functions, IR plus theme to HTML. Standalone and portal (watermarked) variants. |
 | `packages/portal` | Fastify, Drizzle, Postgres. Auth, the admin API, and serving gated decks. |
 | `packages/generate` | The generation engine: prompt, repair loop, and the model providers. A library: no filesystem, no argv, no portal, and it never reads the environment. |
+| `packages/ingest` | Bytes in, text out. PDF, PowerPoint, Word, and images, with OCR only when a document carries no text of its own. Re-authors, never converts (D4, D26). Runs on the author's machine, never the server. |
 | `packages/studio` | The `decktrail` CLI: validate, render, generate, push, brand, voice, config. Owns everything `generate` deliberately does not: argv, files, settings, the portal. |
 | `packages/console` | The owner's React dashboard, served at `/admin`. |
 

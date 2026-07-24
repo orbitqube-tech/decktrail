@@ -37,6 +37,12 @@ tmp/
 # ours to redistribute in the repository: each deploy fetches its own copy.
 packages/renderers/assets/fonts/
 
+# OCR language data, fetched by the reading engine on first use and cached beside whatever
+# invoked it. Several megabytes each, regenerable, and not ours to redistribute. Point
+# DT_OCR_LANG_PATH at a local copy to keep a machine offline; do not commit one.
+*.traineddata
+*.traineddata.gz
+
 # Rendered output from trying the CLI in the repo root.
 *.deck.html
 *.deck.ir.json
