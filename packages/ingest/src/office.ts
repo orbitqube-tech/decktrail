@@ -19,6 +19,23 @@ import type { ExtractedPage, Warning } from "./types.js";
 /** `preserveOrder` keeps document order, which is the whole point when reading prose. */
 const parser = new XMLParser({ preserveOrder: true, ignoreAttributes: true, trimValues: true });
 
+/**
+ * A second parser, for the relationship parts.
+ *
+ * The one above throws attributes away, which is right for prose and useless here: a relationship
+ * is nothing but attributes. Document order does not matter in a relationship part, so this one
+ * keeps the plain shape rather than the ordered one.
+ */
+const relsParser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_" });
+
+/**
+ * The relationship type a slide uses to point at its speaker notes.
+ *
+ * Matched on the type rather than on the target's file name, because the type is what the format
+ * guarantees. A target is free to be named anything and to sit anywhere.
+ */
+const NOTES_SLIDE_RELATIONSHIP_TYPE_SUFFIX = "/notesSlide";
+
 /** A node in the ordered parse: one tag name pointing at its children, or a `#text` leaf. */
 type Ordered = Record<string, unknown>;
 
@@ -85,6 +102,82 @@ function slideOrder(names: string[], prefix: string): string[] {
 }
 
 /**
+ * Where a relationship's target actually lives inside the archive.
+ *
+ * A target is written relative to the part that declares it, so `../notesSlides/notesSlide1.xml`
+ * inside `ppt/slides/_rels/slide3.xml.rels` means `ppt/notesSlides/notesSlide1.xml`. A target
+ * beginning with a slash is relative to the root of the package instead.
+ */
+function resolveRelationshipTarget(sourcePart: string, target: string): string {
+  if (target.startsWith("/")) return target.slice(1);
+  const segments = sourcePart.split("/").slice(0, -1);
+  for (const segment of target.split("/")) {
+    if (segment === "" || segment === ".") continue;
+    if (segment === "..") segments.pop();
+    else segments.push(segment);
+  }
+  return segments.join("/");
+}
+
+/** One or many, as fast-xml-parser gives it: a single relationship does not arrive as a list. */
+function asList(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  return value === undefined || value === null ? [] : [value];
+}
+
+/**
+ * The notes part belonging to this slide, found by asking the slide rather than by counting.
+ *
+ * A deck names its notes parts in their own sequence and records which slide each one belongs to
+ * in that slide's relationship part. The two numbers only line up when every slide from the first
+ * onwards has notes, which is the exception rather than the rule: a deck with notes on slide three
+ * alone stores them in `notesSlide1.xml`. Pairing the nth notes part with the nth slide therefore
+ * attaches one slide's speaker notes to a different slide, silently, and speaker notes are exactly
+ * the material that carries the argument. Getting this wrong does not look like a bug in the
+ * output; it looks like a deck that said something it never said.
+ *
+ * When the slide has no relationship part, or none of its relationships is a notes relationship,
+ * the answer is that there are no notes. It is deliberately not "guess by position": a value that
+ * cannot be read is not a value to invent.
+ */
+function notesPartFor(files: Record<string, Uint8Array>, slidePart: string): string | null {
+  const slideFile = slidePart.split("/").pop();
+  if (slideFile === undefined) return null;
+  const relsPart = `${slidePart.split("/").slice(0, -1).join("/")}/_rels/${slideFile}.rels`;
+
+  const relsXml = readEntry(files, relsPart);
+  if (relsXml === null) return null;
+
+  let parsed: unknown;
+  try {
+    parsed = relsParser.parse(relsXml);
+  } catch {
+    // A relationship part we cannot read tells us nothing about the notes, which is the same
+    // position as a deck with no relationship part at all.
+    return null;
+  }
+
+  const root = isRecord(parsed) ? parsed["Relationships"] : undefined;
+  const relationships = isRecord(root) ? asList(root["Relationship"]) : [];
+
+  for (const relationship of relationships) {
+    if (!isRecord(relationship)) continue;
+    const type = relationship["@_Type"];
+    const target = relationship["@_Target"];
+    if (typeof type !== "string" || typeof target !== "string") continue;
+    if (!type.endsWith(NOTES_SLIDE_RELATIONSHIP_TYPE_SUFFIX)) continue;
+    // An external target is a link to something outside the package, so there is nothing in the
+    // archive to read.
+    if (relationship["@_TargetMode"] === "External") continue;
+
+    // Relative to the slide itself, not to the `_rels` folder its relationships are filed in.
+    const resolved = resolveRelationshipTarget(slidePart, target);
+    return files[resolved] ? resolved : null;
+  }
+  return null;
+}
+
+/**
  * Read a presentation.
  *
  * Warnings come back as codes carrying their sentence, not as sentences alone, so a caller can
@@ -96,7 +189,6 @@ export function extractPptx(bytes: Uint8Array): { pages: ExtractedPage[]; warnin
   const files = unzipSync(bytes) as Record<string, Uint8Array>;
   const names = Object.keys(files);
   const slides = slideOrder(names, "ppt/slides/slide");
-  const notes = slideOrder(names, "ppt/notesSlides/notesSlide");
   const warnings: Warning[] = [];
 
   const pages: ExtractedPage[] = slides.map((name, i) => {
@@ -106,8 +198,10 @@ export function extractPptx(bytes: Uint8Array): { pages: ExtractedPage[]; warnin
 
     // Speaker notes carry the argument the slide only gestures at, and they are exactly the
     // material a re-authored deck wants. They are labelled so the model can tell them from what
-    // was on the slide itself.
-    const noteXml = notes[i] ? readEntry(files, notes[i] as string) : null;
+    // was on the slide itself. Which notes belong to this slide is read off the slide's own
+    // relationships, never inferred from the order the parts happen to be numbered in.
+    const notesPart = notesPartFor(files, name);
+    const noteXml = notesPart ? readEntry(files, notesPart) : null;
     if (noteXml) {
       const noteLines: string[] = [];
       paragraphs(parser.parse(noteXml), "a:p", noteLines);
