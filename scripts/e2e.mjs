@@ -111,7 +111,11 @@ try {
     `node packages/studio/dist/cli.js push "${ir}" --portal ${BASE} --token "${token}" --recipient ${CLIENT}`,
     { encoding: "utf8" },
   );
-  const shareId = out.match(/\/d\/(shr_\w+)/)?.[1];
+  // Share ids are base64url (see portal crypto), so they can contain a hyphen. `\w` does not
+  // match one, and truncating the id at the first hyphen sends the browser to a share that does
+  // not exist: a "page not available" that looks like a serving bug and is really a parse bug,
+  // firing only on the runs whose random id happens to carry a hyphen.
+  const shareId = out.match(/\/d\/(shr_[\w-]+)/)?.[1];
   if (!shareId) fail(`push did not mint a share link:\n${out}`);
   log(`published and shared: ${shareId}`);
 
