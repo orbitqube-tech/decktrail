@@ -31,7 +31,8 @@ function usage(): never {
                                      a larger recognition model on a scan that came back wrong.
                                      --ocr-model-path reads the models from a local directory
                                      instead of fetching them, which is what makes a run offline.
-  generate <content> [--out <file>] [--client <name>] [--voice <file.json>] [--voice-md <file.md>]
+  generate <content> [--out <file>] [--client <name>] [--prompt <text>]
+                     [--voice <file.json>] [--voice-md <file.md>]
                      [--provider <${PROVIDER_IDS.join("|")}>] [--model <provider/model>] [--command <bin>]
                      [--portal <url>] [--token <token>] [--ocr auto|never|force]
                                      Generate a deck IR from a content file, then validate it.
@@ -43,9 +44,12 @@ function usage(): never {
                                      runs the OpenCode CLI, which is how you reach a local or a
                                      free model. --client sets who the deck is for, which groups
                                      your decks in the console; inferred from the content if
-                                     omitted. The voice comes from --voice, else voice.json here,
-                                     else the voice you set in the console, else its local cache
-                                     when the portal is unreachable, else a neutral default.
+                                     omitted. --prompt is one line of guidance for this deck alone
+                                     ("lead with the cost, keep it to six slides"), folded into
+                                     whichever voice wins. The voice comes from --voice, else
+                                     voice.json here, else the voice you set in the console, else
+                                     its local cache when the portal is unreachable, else a
+                                     neutral default.
   push <file> [--portal <url>] [--token <token>] [--recipient <email>] [--theme <file>]
                                      Publish an IR file to a portal, and optionally share it.
   brand <url> [--out <file>]         Extract a theme from a website into theme.json.
@@ -196,6 +200,7 @@ async function main(): Promise<void> {
       const resolved = await resolveVoice({
         jsonPath: flag(rest, "--voice") ?? (existsSync("voice.json") ? "voice.json" : undefined),
         markdownPath: flag(rest, "--voice-md") ?? (existsSync("voice.md") ? "voice.md" : undefined),
+        prompt: flag(rest, "--prompt"),
         portalUrl: config.portal.url.value,
         portalToken: config.portal.token.value,
         cacheMaxAgeDays: config.voice.cacheMaxAgeDays.value,
@@ -233,6 +238,7 @@ async function main(): Promise<void> {
     const resolved = await resolveVoice({
       jsonPath: flag(rest, "--voice") ?? (existsSync("voice.json") ? "voice.json" : undefined),
       markdownPath: flag(rest, "--voice-md") ?? (existsSync("voice.md") ? "voice.md" : undefined),
+      prompt: flag(rest, "--prompt"),
       portalUrl: config.portal.url.value,
       portalToken: config.portal.token.value,
       cacheMaxAgeDays: config.voice.cacheMaxAgeDays.value,

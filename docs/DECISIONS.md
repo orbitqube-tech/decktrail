@@ -951,3 +951,46 @@ down because two of the three corrected an assumption:
 **What remains unmeasured:** a paid model through a gateway, and therefore any real spending
 ceiling. The free lane cost `0.0000000000` by the gateway's own accounting, so nothing here has
 tested a cap that has money behind it.
+
+## D30. Getting started is one command, and steering a deck is one line
+
+**Decision:** Two things a reader had to assemble by hand are now done for them.
+
+`./scripts/up.sh` is the install. It verifies Docker is running, writes a `.env` with a generated
+database password, starts the stack, waits until the portal answers, builds the command line tool,
+puts `decktrail` within reach, and prints the one-time setup link. Doing it by hand still works and
+is still documented, but it is no longer the first thing a stranger meets.
+
+`decktrail generate ... --prompt "<text>"` is one line of guidance for one deck, folded into
+whichever voice wins, after `--voice-md`, because an instruction typed for a single run is more
+specific than one kept in a file.
+
+**Why:**
+1. **Every hand step was a step to get wrong, and none of them was a decision.** The password was
+   arbitrary, the wait was a guess, and the link had to be dug out of a log. None of that is the
+   author expressing intent, so none of it should be theirs to do.
+2. **Guidance existed but only as a file.** `--voice-md` covers a register you keep. It does not
+   cover "this one leads with the cost", which is most of what an author wants to say, and writing
+   a file to say one sentence is friction with no purpose.
+3. **A guess about the port was silently wrong, which is Rule 4 in the small.** See below.
+
+**What this fixed on the way, and it was a real defect:** the port was hardcoded in
+`docker-compose.yml` while `.env.example` advertised a `PORT` setting. Setting it did nothing: the
+container listened on 3000 whatever you wrote, and the published mapping was fixed too, so a machine
+with 3000 already busy had no way through and no explanation. The port now comes from `.env` like
+every other setting, defaulting to 3000 so every existing install stays exactly where it was.
+`up.sh` reads the port from `.env` when one exists rather than overriding it, because a setting with
+two homes is the thing that caused this.
+
+**Consequences:**
+- **The secrets are still not written by the installer.** It generates the database password because
+  that value has nowhere else to live. It deliberately leaves `DT_TOKEN_SECRET`,
+  `DT_SESSION_SECRET` and `DT_ADMIN_TOKEN` empty, because the portal mints those on first boot and
+  persists them in its own settings store. An installer that invented them would create a second
+  home for a secret, which is how a published admin token reached users once already.
+- **The end-to-end gate has a prerequisite worth knowing.** It reads `DT_ADMIN_TOKEN` from `.env`,
+  and a fresh install does not put one there, so the gate needs an operator-set token. That is the
+  gate's assumption rather than the product's, and it is recorded here so the next person to hit it
+  does not read it as a regression.
+- **A prompt reports itself honestly.** With guidance and no voice under it, generation says the
+  voice came from your prompt rather than naming a file that does not exist.
