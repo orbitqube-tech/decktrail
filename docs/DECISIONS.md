@@ -851,3 +851,39 @@ estimates, because a number that decides a default has to be a measurement.
   against a generated corpus. Numeric accuracy is called out separately from character error rate
   because a fee misread by one digit is a different kind of wrong from a misspelt heading, and an
   aggregate error rate hides it.
+
+---
+
+## D28. The ingestion implementation is a shared library now, and the behaviour is unchanged
+
+**Decision:** Everything D26 and D27 describe about ingestion still holds exactly: reading runs on
+the author's machine, the text layer is preferred to the picture, the better recognition engine is
+optional and the fallback is always present, every result names its engine, and no threshold is a
+guess. What changed is where that code lives. The detection, the readers, the two engines, the
+pipeline and the eval harness moved out of `packages/ingest` into a standalone package,
+`@orbitqube/oq-ai-ocr`, and `packages/ingest` is now a thin surface over it.
+
+**Why:** the same ingestion problem exists in more than one place, and a private copy in each was
+drifting. One implementation, published and versioned, is one place a bug gets fixed and one place
+a threshold is measured. The package is open source under the same AGPL licence as DeckTrail, so a
+public repository may depend on it without pointing a reader at anything they cannot fetch.
+
+**What stayed here:** the DeckTrail-specific glue and nothing else. The studio's configuration
+surface (the reading mode, the tier, the model paths) and the two type names DeckTrail introduced
+its ingestion with, `Extracted` and `OcrTier`, which the package re-exports as aliases for the
+library's `ExtractionResult` and `Tier` so the studio's call sites read unchanged.
+
+**Consequences:**
+- **The engine is still not declared in DeckTrail's install, and now the library does not declare it
+  either.** D27 kept the engine out of `packages/ingest` on purpose. The library keeps it out for a
+  sharper reason found while wiring this up: a package manager installs a dependency's *optional
+  peer* dependencies automatically, so declaring the engine even optionally would put roughly 300 MB
+  into every consumer of the library whether or not they read a scan. The engine is loaded through a
+  dynamic import that fails softly when it is absent, so it is declared nowhere and installed by the
+  author when a scan actually needs it, exactly as D27 intended.
+- **A fresh clone stays lean.** The dependency pulls the format readers, not the recognition engine.
+  Installing the engine is still the one explicit `ppu-paddle-ocr onnxruntime-node` step, unchanged
+  for the author.
+- **The behaviour is identical, and the release gates prove it.** The rewire deleted the local copy
+  and added the dependency with no change to what an author sees; the end-to-end journey and the
+  database tests pass unchanged.

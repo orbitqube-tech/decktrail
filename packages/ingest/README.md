@@ -6,6 +6,10 @@ This package takes a file somebody sent you, a PDF, a PowerPoint deck, a Word do
 a photograph, and pulls the words out so a deck can be re-authored from them. It runs on your own
 machine. The portal never parses an uploaded file, so it gains no attack surface from one.
 
+The reading itself is the shared, open source [`@orbitqube/oq-ai-ocr`](https://www.npmjs.com/package/@orbitqube/oq-ai-ocr)
+library; this package is DeckTrail's thin surface over it, so the same implementation serves every
+tool that reads a document. What follows describes the behaviour you get through it.
+
 It re-authors, it does not convert. Layout, styling, masters, and anything carried purely by a
 picture do not survive. What survives is the substance, which then gets rebuilt in your own
 layouts and your own brand. See `docs/DECISIONS.md`, D4 and D26.
