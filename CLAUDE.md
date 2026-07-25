@@ -38,12 +38,19 @@ raw JSON with nowhere to sign in; and the console's Voice tab wrote to a row not
 of it was found by using the product, none by testing it.
 
 ```sh
+./scripts/up.sh               # the whole install, as a stranger gets it
 ./scripts/e2e.sh              # the whole journey, real browser, empty database
 ./scripts/test-integration.sh # the database tests that otherwise skip themselves
 ```
 
-Both are release gates. A test that stubs the thing it is testing proves nothing, and this
+The last two are release gates. A test that stubs the thing it is testing proves nothing, and this
 repository has shipped several.
+
+The first one is there because the install is a feature and breaks like one. Running it found a
+port that was pinned in the compose file while `.env.example` advertised it as a setting, shell
+scripts committed without the executable bit so the documented commands failed on a fresh clone
+anywhere but Windows, and a script that called a port busy when its own stack was holding it. None
+of that was visible from reading, and no test covers any of it.
 
 **3. This repository is public. Write everything in it for a stranger.**
 
@@ -93,10 +100,16 @@ also pins the author to the maintainer, so **do not enable it on a fork**; see
 | `packages/ingest` | DeckTrail's thin surface over the shared `@orbitqube/oq-ai-ocr` library (D28). Bytes in, text out: PDF, PowerPoint, Word, and images, with OCR only when a document carries no text of its own. Re-authors, never converts (D4, D26). Runs on the author's machine, never the server. |
 | `packages/studio` | The `decktrail` CLI: validate, render, generate, push, brand, voice, config. Owns everything `generate` deliberately does not: argv, files, settings, the portal. |
 | `packages/console` | The owner's React dashboard, served at `/admin`. |
+| `scripts/` | `up.sh`, `up.ps1` and `up.bat` are the install, one command each. `up.bat` is a doorway to the PowerShell script rather than a third copy, and the one piece of shared logic, `wire-gateway.mjs`, is called by both so no platform can wire things differently. |
 
 `docs/DECISIONS.md` holds every settled decision and supersedes anything that contradicts it,
 including this file. Read it before proposing a change to how something works: several
 decisions were reversed after evidence, and the reasoning is recorded with them.
+
+**Versions are cut deliberately.** The version lives in the root `package.json` and nowhere else,
+`decktrail --version` reads that same file so the tool and the tag cannot disagree, and
+`docs/RELEASING.md` is the process. `CHANGELOG.md` is written before the number is bumped: if the
+entry is hard to write because nothing user-visible changed, there is no release to cut.
 
 ## Where the sharp edges are
 
@@ -108,3 +121,11 @@ decisions were reversed after evidence, and the reasoning is recorded with them.
   not at all.
 - **The in-memory fakes must match the real stores.** They diverged once, and the tests passed
   against the permissive one while production silently did nothing.
+- **The installer must never write a secret it could instead let the portal mint.** It generates
+  the database password, which has nowhere else to live, and deliberately leaves the token, session
+  and admin secrets empty for the portal to create and persist itself. A secret with two homes is
+  how a published admin token reached users once already.
+- **`scripts/wire-gateway.mjs` edits a file that is not ours.** It merges into your OpenCode
+  configuration, keeps a backup, does nothing when the provider is already there, and refuses
+  rather than guesses when the file carries comments a JSON parser would destroy. Anything else
+  that touches a user's own config should behave the same way.
