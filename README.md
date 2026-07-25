@@ -80,7 +80,17 @@ console served at `/admin`).
 ```sh
 git clone https://github.com/orbitqube-tech/decktrail
 cd decktrail
-./scripts/up.sh
+./scripts/up.sh          # macOS, Linux, or WSL
+```
+
+On Windows, the same thing in PowerShell or from `cmd.exe`:
+
+```powershell
+.\scripts\up.ps1
+```
+
+```bat
+scripts\up.bat
 ```
 
 That is the whole install. It checks Docker, writes a `.env` with a generated database password,
@@ -92,8 +102,11 @@ Run it again whenever you like: it will not overwrite a `.env` you have edited, 
 running stack alone. If port 3000 is taken on your machine, pass another and it is used end to end:
 
 ```sh
-./scripts/up.sh --port 3900
+./scripts/up.sh --port 3900          # or: .\scripts\up.ps1 -Port 3900
 ```
+
+Add `--gateway` (`-Gateway` in PowerShell) and it also starts a local model routing gateway and
+tells OpenCode how to reach it. See [Which model writes the deck](docs/reference/cli.md#which-model-writes-the-deck).
 
 <details>
 <summary>Prefer to do it by hand</summary>

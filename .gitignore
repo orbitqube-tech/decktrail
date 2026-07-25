@@ -60,3 +60,4 @@ examples/*.html
 
 # The launcher scripts/up.sh writes, so the CLI runs without a global install.
 /decktrail
+/decktrail.cmd
