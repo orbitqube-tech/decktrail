@@ -70,26 +70,13 @@ importers:
 
   packages/ingest:
     dependencies:
-      fast-xml-parser:
-        specifier: ^5.10.1
-        version: 5.10.1
-      fflate:
-        specifier: ^0.8.3
-        version: 0.8.3
-      pdfjs-dist:
-        specifier: ^6.1.200
-        version: 6.1.200
-      tesseract.js:
-        specifier: ^7.0.0
-        version: 7.0.0
+      '@orbitqube/oq-ai-ocr':
+        specifier: ^0.1.2
+        version: 0.1.2
     devDependencies:
       '@types/node':
         specifier: ^26.1.1
         version: 26.1.1
-    optionalDependencies:
-      '@napi-rs/canvas':
-        specifier: ^1.0.2
-        version: 1.0.2
 
   packages/ir:
     dependencies:
@@ -620,6 +607,9 @@ packages:
 
   '@nodable/entities@3.0.0':
     resolution: {integrity: sha512-8L9xFeTYKhm49xfIypoe2W5wV1m/3Z58kT+7kR9A8OyFxcPduI4VmxaUMQyKYrRjUoLLSXv6EKKID5Tvj9cUVw==}
+
+  '@orbitqube/oq-ai-ocr@0.1.2':
+    resolution: {integrity: sha512-HV8L8ZmpfM6L+KC4/de64pC0eGeMjz8DApwXBrrSW9n8KIuG5mvddBsMzHss8xj6+Dktt8aAsV10777III3nGg==}
 
   '@oxc-project/types@0.139.0':
     resolution: {integrity: sha512-r9gHphtCs+1M7J0pw6Sn/hh/Wpa/iQrOOkrNAlVLF/gHq+/CJmHIWKKUUhdWjcD6CIa8idarspCsASiXCXvFUw==}
@@ -2001,6 +1991,17 @@ snapshots:
     optional: true
 
   '@nodable/entities@3.0.0': {}
+
+  '@orbitqube/oq-ai-ocr@0.1.2':
+    dependencies:
+      fast-xml-parser: 5.10.1
+      fflate: 0.8.3
+      pdfjs-dist: 6.1.200
+      tesseract.js: 7.0.0
+    optionalDependencies:
+      '@napi-rs/canvas': 1.0.2
+    transitivePeerDependencies:
+      - encoding
 
   '@oxc-project/types@0.139.0': {}
 

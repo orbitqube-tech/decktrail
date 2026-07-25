@@ -101,7 +101,7 @@ async function readSource(file: string, config: StudioConfig): Promise<Extracted
   const bytes = new Uint8Array(readFileSync(file));
   const result = await extractDocument(bytes, {
     filename: file,
-    ocr: config.ingest.ocr.value,
+    ocrMode: config.ingest.ocr.value,
     languages: [config.ingest.ocrLang.value],
     tier: config.ingest.ocrTier.value,
     modelPath: config.ingest.ocrModelPath.value,

@@ -2,7 +2,7 @@
   "name": "@decktrail/ingest",
   "version": "0.0.0",
   "private": true,
-  "description": "DeckTrail ingestion: pull the substance out of a PDF, a deck, a document, or a scan, so it can be re-authored as a DeckTrail artifact.",
+  "description": "DeckTrail ingestion: the DeckTrail-facing surface over the shared @orbitqube/oq-ai-ocr library.",
   "license": "AGPL-3.0-only",
   "type": "module",
   "main": "./dist/index.js",
@@ -20,13 +20,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "fast-xml-parser": "^5.10.1",
-    "fflate": "^0.8.3",
-    "pdfjs-dist": "^6.1.200",
-    "tesseract.js": "^7.0.0"
-  },
-  "optionalDependencies": {
-    "@napi-rs/canvas": "^1.0.2"
+    "@orbitqube/oq-ai-ocr": "^0.1.2"
   },
   "devDependencies": {
     "@types/node": "^26.1.1"
