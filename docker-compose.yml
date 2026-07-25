@@ -41,11 +41,15 @@ services:
       DT_ADMIN_TOKEN: ${DT_ADMIN_TOKEN:-}
       DT_BASE_HOST: ${DT_BASE_HOST:-localhost:3000}
       DT_COOKIE_SECURE: ${DT_COOKIE_SECURE:-false}
-      PORT: "3000"
-    # Bound to loopback, never the public interface. Locally you reach it at localhost:3000; in
+      # PORT comes from .env like everything else. It was pinned here once, which made the PORT
+      # line in .env.example a setting that looked real and did nothing: the container listened on
+      # 3000 whatever you wrote, and a machine with 3000 already taken had no way through. One
+      # setting, one home. The default keeps every existing install exactly where it was.
+      PORT: ${PORT:-3000}
+    # Bound to loopback, never the public interface. Locally you reach it at the port below; in
     # production a reverse proxy on the same host forwards to it (see docker-compose.prod.yml).
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:${PORT:-3000}:${PORT:-3000}"
     deploy:
       resources:
         limits:

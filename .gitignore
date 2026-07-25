@@ -57,3 +57,6 @@ packages/ingest/evals/tmp/
 
 # The example deck renders on demand (pnpm demo). The IR beside it is the source.
 examples/*.html
+
+# The launcher scripts/up.sh writes, so the CLI runs without a global install.
+/decktrail

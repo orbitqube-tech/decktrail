@@ -31,6 +31,7 @@ export type VoiceOrigin =
   | { kind: "file"; path: string }
   | { kind: "portal"; url: string }
   | { kind: "cache"; url: string; fetchedAt: string; ageDays: number; stale: boolean }
+  | { kind: "prompt" }
   | { kind: "default" };
 
 export interface ResolvedVoice {
@@ -78,11 +79,26 @@ function foldMarkdown(base: Voice, markdown: string | undefined): Voice {
   return base;
 }
 
+/**
+ * Everything the author said about this particular deck, in order of increasing specificity.
+ *
+ * A `--voice-md` file is guidance you keep; a `--prompt` is guidance you typed for this run alone.
+ * Both are free-form and both belong in the same place, so they are joined rather than made to
+ * compete, and the prompt goes last because the more specific instruction should be the one the
+ * model reads most recently.
+ */
+function guidanceFrom(markdown: string | undefined, prompt: string | undefined): string | undefined {
+  const parts = [markdown, prompt].map((p) => p?.trim()).filter((p): p is string => !!p);
+  return parts.length ? parts.join("\n\n") : undefined;
+}
+
 export interface ResolveVoiceInput {
   /** An explicit --voice file. */
   jsonPath?: string;
   /** An explicit --voice-md file, folded into whichever voice wins. */
   markdownPath?: string;
+  /** An explicit --prompt, typed for one run, folded in after the markdown file. */
+  prompt?: string;
   portalUrl?: string;
   portalToken?: string;
   cacheMaxAgeDays: number;
@@ -115,7 +131,10 @@ export interface ResolveVoiceInput {
  * is not a money path. The right failure here is a worse voice with a loud warning, not no deck.
  */
 export async function resolveVoice(input: ResolveVoiceInput): Promise<ResolvedVoice> {
-  const markdown = input.markdownPath ? readFileSync(input.markdownPath, "utf8") : undefined;
+  const markdown = guidanceFrom(
+    input.markdownPath ? readFileSync(input.markdownPath, "utf8") : undefined,
+    input.prompt,
+  );
 
   if (input.jsonPath) {
     const base = Voice.parse(JSON.parse(readFileSync(input.jsonPath, "utf8")));
@@ -160,7 +179,13 @@ export async function resolveVoice(input: ResolveVoiceInput): Promise<ResolvedVo
   }
 
   if (markdown) {
-    return { voice: foldMarkdown(Voice.parse({ name: "custom" }), markdown), origin: { kind: "file", path: input.markdownPath ?? "" } };
+    // Guidance with no voice under it still makes a voice, and the origin has to name where the
+    // guidance came from rather than invent a path: a prompt has no file, and reporting one as an
+    // empty string would tell the author their voice came from nowhere.
+    const voice = foldMarkdown(Voice.parse({ name: "custom" }), markdown);
+    return input.markdownPath
+      ? { voice, origin: { kind: "file", path: input.markdownPath } }
+      : { voice, origin: { kind: "prompt" } };
   }
 
   return { voice: undefined, origin: { kind: "default" } };
@@ -175,6 +200,8 @@ export function describeVoiceOrigin(origin: VoiceOrigin): string {
       return `voice from the console at ${origin.url}`;
     case "cache":
       return `voice from the local cache of ${origin.url}, fetched ${origin.fetchedAt}, ${origin.ageDays} day(s) old${origin.stale ? " and stale" : ""}`;
+    case "prompt":
+      return "no voice configured, using the neutral default with your prompt";
     case "default":
       return "no voice configured, using the neutral default";
   }

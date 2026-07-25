@@ -17,23 +17,35 @@ Everything runs on your machine. Nothing is sent anywhere.
 ```sh
 git clone https://github.com/orbitqube-tech/decktrail
 cd decktrail
-cp .env.example .env
+./scripts/up.sh
 ```
 
-Open `.env` and set one value:
+One command, and it does the lot: checks that Docker is running, writes a `.env` with a generated
+database password, starts Postgres and the portal, waits until the portal answers rather than
+guessing at a delay, builds the `decktrail` command line tool, and prints the link that finishes
+setup.
 
-```sh
-POSTGRES_PASSWORD=pick-something-long-and-random
+```
+DeckTrail
+
+  Docker is running
+  pnpm is available
+  Port 3000 is free
+  Wrote .env with a generated database password
+  Starting the stack, which pulls images the first time
+  Waiting for the portal, which sets itself up on a first boot
+  Portal is healthy on http://localhost:3000
+  Building the command line tool
+  Installed the decktrail command on your PATH
+
+Ready.
 ```
 
-That is the only setting that is required. Everything else has a working default, and the
-secrets generate themselves on first boot.
+If port 3000 is busy on your machine, `./scripts/up.sh --port 3900` uses another one end to end.
+Running it twice is safe: an existing `.env` is never overwritten and a running stack is left alone.
 
-```sh
-docker compose up -d
-```
-
-Two containers start: Postgres, and the portal. Give it about twenty seconds.
+If it printed your setup link, skip to [step 3](#3-finish-setup). The next step is for when you
+want to find that link yourself, or you installed by hand.
 
 ## 2. Find your setup link
 
@@ -86,18 +98,9 @@ Open the link it prints. You are in.
 
 ## 5. Make a deck
 
-First, build the command line tool. Both ways of making a deck below use it, and so does the next
-step.
-
-```sh
-pnpm install
-pnpm -r build
-cd packages/studio && npm link && cd ../..   # puts the decktrail CLI on your PATH
-```
-
-> Prefer not to link it globally? Every `decktrail` command below is the same as
-> `node packages/studio/dist/cli.js`, so `node packages/studio/dist/cli.js generate ...` works
-> without the link step.
+`./scripts/up.sh` already built the command line tool and put `decktrail` on your PATH. If a global
+install was not available it wrote `./decktrail` in the repository instead, which works the same
+way; and `node packages/studio/dist/cli.js` always works whatever happened.
 
 **If you have Claude Code** (a Pro or Max subscription, already logged in), DeckTrail can write
 the deck for you from your notes. It runs on your machine, on your subscription. There is no
@@ -105,6 +108,14 @@ API key and the portal never sees your content.
 
 ```sh
 decktrail generate notes.md --client acme --out deck.json
+```
+
+The content can be a PDF, a PowerPoint deck, a Word document or a scan just as easily as notes, and
+one line of guidance changes the shape of what comes back:
+
+```sh
+decktrail generate discovery-call.pdf --client acme \
+  --prompt "lead with the cost, and keep it to five slides"
 ```
 
 **If you do not have a Claude subscription**, install

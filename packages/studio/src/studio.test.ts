@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { runValidate, runRender, pushArtifact, publishAndShare, fetchVoice, extractBrand, fetchBrand, stylesheetUrls, loadConfig, describeConfig, OCR_MODES } from "./index.js";
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { runValidate, runRender, pushArtifact, publishAndShare, fetchVoice, extractBrand, fetchBrand, stylesheetUrls, loadConfig, describeConfig, OCR_MODES, resolveVoice, describeVoiceOrigin } from "./index.js";
 
 const deck = {
   id: "d",
@@ -359,5 +362,47 @@ describe("resolving settings", () => {
     const shown = describeConfig(loadConfig({ token: "a-real-looking-secret-value" }, noFiles, "/nonexistent"));
     expect(shown).not.toContain("a-real-looking-secret-value");
     expect(shown).toContain("(set)");
+  });
+})
+
+describe("a prompt typed for one deck", () => {
+  const base = { cacheMaxAgeDays: 7, warn: () => {}, cachePath: "/nonexistent-cache.json" };
+
+  it("becomes the voice when there is nothing else, and says so without inventing a file", async () => {
+    const resolved = await resolveVoice({ ...base, prompt: "lead with the cost" });
+    expect(resolved.voice?.instructions).toBe("lead with the cost");
+    expect(resolved.origin.kind).toBe("prompt");
+    expect(describeVoiceOrigin(resolved.origin)).toBe(
+      "no voice configured, using the neutral default with your prompt",
+    );
+  });
+
+  it("is folded into a voice file rather than replacing it, and lands last", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "dt-prompt-"));
+    const voicePath = join(dir, "voice.json");
+    writeFileSync(voicePath, JSON.stringify({ name: "house", instructions: "keep it dry" }));
+
+    const resolved = await resolveVoice({ ...base, jsonPath: voicePath, prompt: "six slides only" });
+    expect(resolved.voice?.instructions).toBe("keep it dry\n\nsix slides only");
+    expect(resolved.origin).toEqual({ kind: "file", path: voicePath });
+
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("comes after a markdown file, because it is the more specific instruction", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "dt-prompt-"));
+    const mdPath = join(dir, "voice.md");
+    writeFileSync(mdPath, "we write in plain words");
+
+    const resolved = await resolveVoice({ ...base, markdownPath: mdPath, prompt: "and briefly" });
+    expect(resolved.voice?.instructions).toBe("we write in plain words\n\nand briefly");
+    expect(resolved.origin).toEqual({ kind: "file", path: mdPath });
+
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("changes nothing when it is absent or blank", async () => {
+    expect((await resolveVoice({ ...base })).origin.kind).toBe("default");
+    expect((await resolveVoice({ ...base, prompt: "   " })).origin.kind).toBe("default");
   });
 })

@@ -72,8 +72,9 @@ come across and the original's layout does not. Run `extract` first to see what 
 |---|---|
 | `--out <file>` | Where to write the IR. Default `deck.json`. |
 | `--client <name>` | **Who the deck is for.** Sets the workspace, which groups your decks in the console. |
+| `--prompt <text>` | One line of guidance for this deck alone, for example `--prompt "lead with the cost and keep it to six slides"`. Folded into whichever voice wins, after `--voice-md`, because an instruction you typed for one run is more specific than one you keep in a file. |
 | `--voice <file.json>` | A voice file to write in. |
-| `--voice-md <file.md>` | Free-form guidance, folded into the voice's instructions. |
+| `--voice-md <file.md>` | Free-form guidance you keep, folded into the voice's instructions. |
 | `--provider <name>` | Which model backend: `claude` (default) or `opencode`. |
 | `--model <provider/model>` | Which model, for backends that take one. OpenCode wants a `provider/model` pair. |
 | `--command <bin>` | Where the backend's binary lives, if it is not on your PATH under its usual name. |

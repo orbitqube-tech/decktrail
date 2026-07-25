@@ -80,20 +80,34 @@ console served at `/admin`).
 ```sh
 git clone https://github.com/orbitqube-tech/decktrail
 cd decktrail
+./scripts/up.sh
+```
+
+That is the whole install. It checks Docker, writes a `.env` with a generated database password,
+brings the stack up, waits until the portal actually answers, builds the `decktrail` command line
+tool, and prints the one-time link that finishes setup. Open that link and the first-run wizard
+asks for your admin email, brand, and mail settings, and invites you.
+
+Run it again whenever you like: it will not overwrite a `.env` you have edited, and it leaves a
+running stack alone. If port 3000 is taken on your machine, pass another and it is used end to end:
+
+```sh
+./scripts/up.sh --port 3900
+```
+
+<details>
+<summary>Prefer to do it by hand</summary>
+
+```sh
 cp .env.example .env
 # Set POSTGRES_PASSWORD in .env. It is the only value you must choose.
 # Leave the secrets empty: the portal generates and persists them on first boot.
 docker compose up
+docker compose logs portal | grep setup   # your one-time setup link
 ```
 
-Then find your setup link in the log:
-
-```sh
-docker compose logs portal | grep setup
-```
-
-It prints a URL with a one-time token. Open it, and the first-run wizard asks for your admin
-email, brand, and mail settings, and invites you.
+Then build the command line tool with `pnpm install && pnpm -r build`.
+</details>
 
 The token exists because setup decides who the administrator is, and at that moment there is
 nobody to ask. Anyone who reached an un-setup portal first would become its admin, so setup is
