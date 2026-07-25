@@ -106,9 +106,21 @@ generation cost. If you want that, put a routing gateway in front of OpenCode. I
 DeckTrail configuration at all, because OpenCode reaches any endpoint that speaks the OpenAI
 shape, and DeckTrail already reaches OpenCode.
 
-The whole change is in OpenCode's own configuration file, `opencode.json` in your project or
-`~/.config/opencode/opencode.json`. Using [OmniRoute](https://github.com/diegosouzapw/omniroute) as
-the worked example, which is one such gateway, MIT licensed and a single container:
+The quickest way is to let the installer do it:
+
+```sh
+./scripts/up.sh --gateway          # or: .\scripts\up.ps1 -Gateway
+```
+
+That starts a gateway container bound to loopback, waits until it answers, and teaches OpenCode how
+to reach it. It merges into your OpenCode configuration rather than replacing it, keeps the previous
+version as a `.bak`, does nothing if the provider is already there, and if your config carries
+comments it prints the snippet and leaves the file alone rather than letting a JSON parser eat them.
+
+To wire it by hand, or to point at a gateway you already run, the whole change is in OpenCode's own
+configuration file, `opencode.json` in your project or `~/.config/opencode/opencode.json`. Using
+[OmniRoute](https://github.com/diegosouzapw/omniroute) as the worked example, which is one such
+gateway, MIT licensed and a single container:
 
 ```json
 {
@@ -156,6 +168,14 @@ whatever the value, including zero and negative, so nothing is enforced from the
 you need a hard ceiling, configure it as a spend limit in the gateway itself and verify it there
 before you rely on it. DeckTrail has no cost model, no spend ledger and no budget flag, and will not
 pretend otherwise.
+
+**A keyless gateway is for looking, not for depending on.** A gateway with no credentials configured
+will answer, which makes it a good way to watch the whole path work before committing to anything.
+What it routes you to varies from one call to the next, and some free models cannot hold a schema:
+the same combo wrote a valid deck on one run here and failed four repair attempts on another. Put
+your own keys behind the gateway for work with a date on it, and treat the free lane as a way to try
+it. When a free model does struggle, `--repair-attempts` is the dial, and naming a specific model
+rather than an automatic pick is the fix.
 
 Any OpenAI-compatible gateway works the same way; DeckTrail has no opinion and no dependency on
 which one you pick. Whether the routing saves you anything is measured at the gateway, where the

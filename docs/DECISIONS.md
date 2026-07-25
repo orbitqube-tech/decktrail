@@ -994,3 +994,19 @@ two homes is the thing that caused this.
   does not read it as a regression.
 - **A prompt reports itself honestly.** With guidance and no voice under it, generation says the
   voice came from your prompt rather than naming a file that does not exist.
+- **Every platform gets the same one command, and Windows is not a second implementation.**
+  `scripts/up.sh` covers macOS, Linux and WSL; `scripts/up.ps1` is its Windows twin; `scripts/up.bat`
+  is a doorway to the PowerShell script rather than a third copy of the logic, so `cmd.exe` and a
+  double-click work without giving Windows its own version to drift. The one piece of real logic they
+  share, teaching OpenCode about a gateway, lives in `scripts/wire-gateway.mjs` and is called by
+  both. `up.bat` bypasses the execution policy for its own process only, because asking somebody to
+  loosen a machine security setting in order to install software is not a reasonable thing to ask.
+- **The gateway is one flag, and it edits a file that is not ours with care.** `--gateway` starts a
+  gateway bound to loopback and wires OpenCode to it. That configuration belongs to the author, so
+  the helper merges instead of writing, keeps a `.bak`, does nothing when the provider is already
+  present, and refuses rather than guesses when the file carries comments a JSON parser would
+  destroy, printing the snippet instead.
+- **Running it twice had to actually work, and at first it did not.** The port check called the port
+  busy when DeckTrail's own stack was the thing holding it, so the second run of a script whose whole
+  promise is that it is safe to run twice failed on the port it had itself taken. "Busy" now means
+  somebody else: our own healthy stack on that port is recognised and left alone.

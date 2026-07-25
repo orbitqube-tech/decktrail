@@ -20,6 +20,11 @@ cd decktrail
 ./scripts/up.sh
 ```
 
+That is macOS, Linux, and WSL. On Windows use `.\scripts\up.ps1` in PowerShell, or `scripts\up.bat`
+from `cmd.exe`; they take the same arguments in PowerShell form, so `--port 3900` becomes
+`-Port 3900`. All three do exactly the same work, because the Windows batch file is a doorway to the
+PowerShell script rather than a second copy of it.
+
 One command, and it does the lot: checks that Docker is running, writes a `.env` with a generated
 database password, starts Postgres and the portal, waits until the portal answers rather than
 guessing at a delay, builds the `decktrail` command line tool, and prints the link that finishes

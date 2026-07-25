@@ -8,14 +8,18 @@
 #
 # Safe to run twice. An existing .env is never overwritten and an existing stack is left running.
 #
-# Usage: ./scripts/up.sh [--port <n>]
+# Usage: ./scripts/up.sh [--port <n>] [--gateway]
 set -eu
 
 PORT_WANTED=3000
+GATEWAY=0
+GATEWAY_PORT=20128
 while [ $# -gt 0 ]; do
   case "$1" in
     --port) PORT_WANTED=${2:?--port needs a number}; shift 2 ;;
-    -h|--help) echo "Usage: ./scripts/up.sh [--port <n>]"; exit 0 ;;
+    --gateway) GATEWAY=1; shift ;;
+    --gateway-port) GATEWAY_PORT=${2:?--gateway-port needs a number}; shift 2 ;;
+    -h|--help) echo "Usage: ./scripts/up.sh [--port <n>] [--gateway] [--gateway-port <n>]"; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; exit 1 ;;
   esac
 done
@@ -77,7 +81,17 @@ else
   PORT=$PORT_WANTED
 fi
 
-if port_busy "$PORT"; then
+# Our own running stack holds this port, and that is not a conflict. Without this the second run of
+# a script whose whole promise is that it is safe to run twice failed on the port it had itself
+# taken. "Busy" has to mean somebody else.
+ours_already_up() {
+  docker compose ps -q portal 2>/dev/null | grep -q . || return 1
+  curl -fsS "http://localhost:$1/healthz" >/dev/null 2>&1
+}
+
+if ours_already_up "$PORT"; then
+  say "DeckTrail is already running on port $PORT"
+elif port_busy "$PORT"; then
   if [ -f .env ]; then
     die "Port $PORT is already in use by something else on this machine, and your .env asks for it.
 Change PORT and DT_BASE_HOST in .env to a free port, then run this again."
@@ -86,8 +100,9 @@ Change PORT and DT_BASE_HOST in .env to a free port, then run this again."
 Pick another and DeckTrail will use it end to end:
 
     ./scripts/up.sh --port 3900"
+else
+  say "Port $PORT is free"
 fi
-say "Port $PORT is free"
 
 random_secret() {
   # Three sources, tried in order, because a weak password here is not worth a convenience.
@@ -175,6 +190,46 @@ else
   say "Created ./decktrail in this folder (a global install was not available)"
 fi
 
+# ---------------------------------------------------------------- the optional routing gateway
+
+GATEWAY_READY=0
+if [ "$GATEWAY" -eq 1 ]; then
+  if docker ps --format '{{.Names}}' | grep -qx decktrail-gateway; then
+    say "Routing gateway already running"
+    GATEWAY_READY=1
+  elif port_busy "$GATEWAY_PORT"; then
+    say "Something already listens on $GATEWAY_PORT; leaving it alone and skipping the gateway"
+  else
+    say "Starting a routing gateway, which pulls a large image the first time"
+    docker rm -f decktrail-gateway >/dev/null 2>&1 || true
+    if docker run -d --name decktrail-gateway --stop-timeout 40 \
+        -p "127.0.0.1:$GATEWAY_PORT:20128" \
+        -v decktrail-gateway-data:/app/data \
+        diegosouzapw/omniroute:latest >/dev/null 2>&1; then
+      i=0
+      until [ "$i" -ge 120 ]; do
+        curl -fsS "http://127.0.0.1:$GATEWAY_PORT/v1/models" >/dev/null 2>&1 && break
+        i=$((i + 1)); sleep 1
+      done
+      if [ "$i" -lt 120 ]; then
+        say "Gateway is answering on http://127.0.0.1:$GATEWAY_PORT"
+        GATEWAY_READY=1
+      else
+        say "The gateway started but never answered. Look at: docker logs decktrail-gateway"
+      fi
+    else
+      say "Could not start the gateway. Look at: docker logs decktrail-gateway"
+    fi
+  fi
+
+  # Teaching OpenCode about the gateway means editing OpenCode's configuration, which belongs to
+  # the author and may already say things we must not lose. So this merges, backs up first, and
+  # refuses rather than guesses when the file carries comments a JSON parser would destroy.
+  if [ "$GATEWAY_READY" -eq 1 ] && command -v node >/dev/null 2>&1; then
+    GATEWAY_PORT="$GATEWAY_PORT" node scripts/wire-gateway.mjs || true
+  fi
+fi
+
 # ---------------------------------------------------------------- what to do next
 
 SETUP=$(docker compose logs portal 2>/dev/null | grep -o "$BASE/setup?token=[A-Za-z0-9_-]*" | tail -1 || true)
@@ -186,6 +241,13 @@ else
   printf 'Finish setup by opening the link this prints:\n\n    docker compose logs portal | grep setup\n\n'
 fi
 printf 'Then make a deck from anything you already have:\n\n'
-printf '    %s generate notes.md --client acme --prompt "lead with the cost"\n' "$HOW"
-printf '    %s generate proposal.pdf --client acme\n\n' "$HOW"
+if [ "$GATEWAY_READY" -eq 1 ]; then
+  printf '    %s generate notes.md --client acme --prompt "lead with the cost" \\\n' "$HOW"
+  printf '        --provider opencode --model omniroute/bestfast\n\n'
+  printf 'That routes through the gateway, which picks a free model and reports what it cost.\n'
+  printf 'Drop the last line to use your own Claude login instead.\n\n'
+else
+  printf '    %s generate notes.md --client acme --prompt "lead with the cost"\n' "$HOW"
+  printf '    %s generate proposal.pdf --client acme\n\n' "$HOW"
+fi
 printf 'A PDF, a PowerPoint deck, a Word document, a scan or plain notes all work.\n\n'
