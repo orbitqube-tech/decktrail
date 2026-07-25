@@ -49,6 +49,8 @@ If you hit something the guide does not answer, that is a documentation bug and 
 - **[Attribution](../ATTRIBUTION.md)** The mark on your decks, and why it is a request rather than a rule.
 - **[Trademark policy](../TRADEMARK.md)** What you may do with the name.
 - **[Contributing](../CONTRIBUTING.md)** How to work on it.
+- **[Releasing](RELEASING.md)** What a version number means here, and how one is cut.
+- **[Changelog](../CHANGELOG.md)** Every released version, newest first.
 
 ---
 
