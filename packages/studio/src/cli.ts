@@ -58,6 +58,7 @@ function usage(): never {
                                      generation keeps its register when you are offline.
   voice show                         Print the voice that generation would use, and where it
                                      came from.
+  --version                          Print the version and exit.
   config show                        Print every resolved setting and which layer set it. The
                                      admin token is reported as set or not set, never printed.
 
@@ -137,8 +138,30 @@ function requirePortal(config: StudioConfig): { url: string; token: string } {
   return { url, token };
 }
 
+/**
+ * The product's version, read from the one place that holds it.
+ *
+ * The root manifest is the single home for this (see `docs/RELEASING.md`), so what the tool reports
+ * and what the git tag says cannot drift apart. A version this cannot find is reported as unknown
+ * rather than guessed, because a wrong version in a bug report costs more than a missing one.
+ */
+function version(): string {
+  try {
+    const root = new URL("../../../package.json", import.meta.url);
+    const parsed = JSON.parse(readFileSync(root, "utf8")) as { version?: string };
+    return parsed.version ?? "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
 async function main(): Promise<void> {
   const [cmd, file, ...rest] = process.argv.slice(2);
+
+  if (cmd === "--version" || cmd === "-v" || cmd === "version") {
+    process.stdout.write(`decktrail ${version()}\n`);
+    return;
+  }
   if (!cmd) usage();
 
   if (cmd === "validate") {
