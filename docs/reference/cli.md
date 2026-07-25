@@ -98,6 +98,68 @@ wrote it.
 A smaller model gets the writing right and the schema wrong more often than a large one. That is
 what the repair loop is for; raise `--repair-attempts` rather than giving up on a model.
 
+### Routing across several models, and spending nothing on the ones that are free
+
+Nothing in DeckTrail chooses between model providers, keeps a provider order, or tracks what a
+generation cost. If you want that, put a routing gateway in front of OpenCode. It needs no
+DeckTrail configuration at all, because OpenCode reaches any endpoint that speaks the OpenAI
+shape, and DeckTrail already reaches OpenCode.
+
+The whole change is in OpenCode's own configuration file, `opencode.json` in your project or
+`~/.config/opencode/opencode.json`. Using [OmniRoute](https://github.com/diegosouzapw/omniroute) as
+the worked example, which is one such gateway, MIT licensed and a single container:
+
+```json
+{
+  "provider": {
+    "omniroute": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "OmniRoute (local gateway)",
+      "options": {
+        "baseURL": "http://127.0.0.1:20128/v1",
+        "apiKey": "whatever your gateway wants"
+      },
+      "models": {
+        "bestfast": { "id": "auto/best-fast" }
+      }
+    }
+  }
+}
+```
+
+Then generate through it:
+
+```sh
+decktrail generate notes.md --client acme --provider opencode --model omniroute/bestfast
+```
+
+Three things are easy to get wrong, so they are worth stating:
+
+- **`npm` is required.** OpenCode has no built-in knowledge of your gateway, so you must tell it
+  which client to speak with. `@ai-sdk/openai-compatible` is the right one for anything presenting
+  an OpenAI-shaped endpoint.
+- **Give the model a short key and put the real name in `id`.** A model reference is
+  `provider/model`, so if your gateway's own model id contains a slash, using it directly produces a
+  three-part reference that does not resolve. Keying it `bestfast` and setting
+  `"id": "auto/best-fast"` keeps the reference to two parts and sends the real id onward.
+- **The key is OpenCode's, and stays OpenCode's.** It sits in the file above, or in the gateway's
+  own configuration. DeckTrail spawns a command and reads its output, so it never sees the
+  credential, never stores it, and never puts it on a command line. That is the same arrangement as
+  a hosted OpenCode model today, not a new one.
+
+**On spending, be careful what you assume.** A gateway reports what a call cost, and OmniRoute
+returns that on every response as `x-omniroute-response-cost` alongside the model and provider it
+actually chose. Reporting a cost is not capping one. A per-request budget header is not a thing you
+should assume works: on OmniRoute 3.8.48 a request carrying a budget header is answered normally
+whatever the value, including zero and negative, so nothing is enforced from the request side. If
+you need a hard ceiling, configure it as a spend limit in the gateway itself and verify it there
+before you rely on it. DeckTrail has no cost model, no spend ledger and no budget flag, and will not
+pretend otherwise.
+
+Any OpenAI-compatible gateway works the same way; DeckTrail has no opinion and no dependency on
+which one you pick. Whether the routing saves you anything is measured at the gateway, where the
+requests are.
+
 ### Which voice it uses
 
 Most specific first:

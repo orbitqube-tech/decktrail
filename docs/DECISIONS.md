@@ -887,3 +887,67 @@ library's `ExtractionResult` and `Tier` so the studio's call sites read unchange
 - **The behaviour is identical, and the release gates prove it.** The rewire deleted the local copy
   and added the dependency with no change to what an author sees; the end-to-end journey and the
   database tests pass unchanged.
+
+## D29. Model routing lives in front of DeckTrail, not inside it
+
+**Decision:** DeckTrail does not choose between model providers, does not hold a provider order or
+a routing policy, does not compress a prompt, and does not track what a generation cost. It has one
+job at that seam, which D25 defined: spawn a backend, hand it the prompt, read what it wrote. An
+operator who wants routing puts a gateway in front of OpenCode and configures it there.
+
+This is recorded because the question keeps being asked, and because the answer is not visible from
+the code: an absence never explains itself.
+
+**Why:**
+1. **The seam already reaches it, so there is nothing to build.** A routing gateway that speaks the
+   OpenAI shape is just another endpoint, and OpenCode can be pointed at an arbitrary endpoint with
+   an arbitrary key and arbitrary per-model headers. So routing is reachable today, through the
+   provider D25 already shipped, with no DeckTrail code and no DeckTrail setting. A native provider
+   would add a network client, a base URL, a credential and a spending model to a package that
+   currently has none of them, in order to reach something already reachable. The recipe is in
+   `docs/reference/cli.md`.
+2. **A routing policy is the operator's, and it is not only about DeckTrail.** Whoever runs several
+   tools against several models wants one policy governing all of them, not a private copy inside
+   each. A copy inside DeckTrail would be one more thing to keep in step with the others, and the
+   first thing to fall behind.
+3. **It keeps the credential where D25 put it.** DeckTrail holds no model credential. Routing
+   through a gateway does not change that: the key is in OpenCode's configuration or the gateway's,
+   both outside this product. A native provider would mean DeckTrail reading a key, which is the one
+   property D9 and D25 both protect.
+
+**Consequences:**
+- **No cost, budget or routing claim may be made anywhere in this repository.** There is no cost
+  model here and no spend ledger, so nothing may say DeckTrail is cheaper, routes, falls back
+  between providers, or caps spending. A gateway can do those things; saying DeckTrail does them
+  would be Rule 1 again. Where a cap is mentioned it is named as the gateway's, with no claim that
+  this project enforces it.
+- **The gateway is an example, never a dependency.** The documentation names one working gateway so
+  the reader has somewhere to start, and states plainly that any OpenAI-compatible one behaves the
+  same. Nothing here depends on a particular gateway, and no gateway is bundled, vendored or
+  required.
+- **This is a reversible decision, and the trigger for reversing it is evidence.** If generation
+  through a gateway turns out to want something the OpenCode hop cannot express, a native provider
+  behind the same `GenerationProvider` interface is a small piece of work, because the interface was
+  built for exactly that. It is not built now because nothing measured asks for it.
+
+**Measured against a running gateway, not reasoned about.** A deck was generated end to end through
+one: notes to a local OmniRoute 3.8.48 container, keyless, reaching a free model, back to a deck
+that `validate` accepts and `render` turns into a watermarked page. No DeckTrail code was added or
+changed to do it, which is the whole claim above. What the run established, and it is worth writing
+down because two of the three corrected an assumption:
+
+- **A free lane is real but not capacity.** The gateway answered with no credential configured at
+  all, offering 99 models. It also failed one call outright after 33 seconds with every free
+  connection reporting `exhausted_connection` and a pool of 54 exhausted after 26 attempts. Treat a
+  keyless gateway as a good first run, never as something a deadline depends on.
+- **A per-request budget header enforces nothing here.** A call carrying one is answered normally
+  whatever the value, including zero and negative. Cost is *reported*, per response, and reporting
+  is not capping. Any spending ceiling has to be configured in the gateway and verified there.
+- **The provider entry needs `npm`, and a slashed model id needs an alias.** OpenCode does not know
+  what your gateway is, and a model reference has exactly two parts, so a gateway model id
+  containing a slash must be aliased rather than used directly. Both are in
+  `docs/reference/cli.md`.
+
+**What remains unmeasured:** a paid model through a gateway, and therefore any real spending
+ceiling. The free lane cost `0.0000000000` by the gateway's own accounting, so nothing here has
+tested a cap that has money behind it.
