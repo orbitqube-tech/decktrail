@@ -2,6 +2,15 @@
 
 **Version 1.0.**
 
+> **NOT YET REVIEWED BY COUNSEL.** This agreement was drafted carefully and from
+> good sources, and it has **not been reviewed by a qualified lawyer**. It is
+> published in that state deliberately, because a project that quietly presents
+> an unreviewed instrument as settled is worse than one that says where it
+> stands. Until that review happens, DeckTrail accepts **issues but not merged
+> merge requests**, so nobody signs an agreement whose enforceability nobody has
+> checked. If you are considering contributing and this matters to you, it
+> should; take your own advice, and watch this notice for a change.
+
 > This is a legal agreement, not legal advice. If you are unsure whether to sign, take your own.
 >
 > Its **licensing structure** follows the [Harmony Agreements](https://www.harmonyagreements.org)
