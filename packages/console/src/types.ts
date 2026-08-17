@@ -52,6 +52,7 @@ export interface AnalyticsSummary {
   bySlide: SlideStat[];
   reading: ReadingStat[];
   completions: number;
+  devtoolsOpens: number;
 }
 export interface AuthConfig {
   turnstileSitekey: string | null;

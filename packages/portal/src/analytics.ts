@@ -170,6 +170,12 @@ export interface AnalyticsSummary {
   reading: ReadingStat[];
   /** How many times a reader reached the end of something. */
   completions: number;
+  /**
+   * How many times the devtools heuristic in beacon.ts fired. A signal, not a fact: the
+   * technique has its own false positives, documented at the detection site, so this counts
+   * a possible inspection rather than a proven one.
+   */
+  devtoolsOpens: number;
 }
 
 /**
@@ -364,6 +370,7 @@ export function summarize(events: EventRecord[]): AnalyticsSummary {
     bySlide,
     reading,
     completions: events.filter((e) => e.type === EVENT.deckComplete).length,
+    devtoolsOpens: events.filter((e) => e.type === EVENT.devtoolsOpen).length,
   };
 }
 

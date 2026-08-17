@@ -69,4 +69,21 @@ describe("beacon injection", () => {
     const html = renderPortalDeck(deck, theme, watermark, { recipient: "c@acme.com" }, { beacon });
     expect(html).not.toContain(String.fromCharCode(0x2014));
   });
+
+  it("carries the devtools heuristic, sent at most once per view", () => {
+    const html = renderPortalDeck(deck, theme, watermark, { recipient: "c@acme.com" }, { beacon });
+    expect(html).toContain("devtools_open");
+    // Guarded by a flag checked before the interval does any work, and the interval is
+    // cleared once a send has gone out, so it cannot fire twice for the same view.
+    expect(html).toContain("devtoolsSent");
+    expect(html).toContain("clearInterval(devtoolsTimer)");
+  });
+
+  it("carries a debounced selection tripwire, same send() shape as the other tripwires", () => {
+    const html = renderPortalDeck(deck, theme, watermark, { recipient: "c@acme.com" }, { beacon });
+    expect(html).toContain("selectionchange");
+    expect(html).toContain("reason:'selection'");
+    // Debounced: each change clears the pending timer rather than scheduling a new send outright.
+    expect(html).toContain("clearTimeout(selTimer)");
+  });
 });

@@ -23,6 +23,10 @@ export function Dashboard({ data }: { data: AnalyticsSummary }): React.ReactElem
               no invite at all. A forwarded link shows up here. */}
           <Tile label="Refused" value={data.deniedCount} />
           <Tile label="Scrape attempts" value={data.botAttempts.length} alert />
+          {/* A heuristic, not a fact about a person: see the detection comment in beacon.ts for
+              the false positives it still has, such as a browser extension that formats
+              console output with nobody watching. */}
+          <Tile label="Devtools opened (signal)" value={data.devtoolsOpens} />
         </div>
 
         <section className="panel">

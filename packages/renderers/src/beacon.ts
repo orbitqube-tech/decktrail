@@ -78,5 +78,38 @@ export const beaconJs = `
   if((e.ctrlKey||e.metaKey)&&k==='s'){send('download_attempt',{});}
   if((e.ctrlKey||e.metaKey)&&k==='p'){send('print_attempt',{});}
  });
+ // Devtools detection: chosen for the lowest false positive rate among the options, not the
+ // highest sensitivity, because a false "your client inspected the page" names a real person.
+ // A window dimension check was rejected: a docked panel, a zoomed page, and a merely narrow
+ // window all shift outer/inner width exactly like a real devtools pane does. A debugger
+ // timing check was rejected too: a slow machine produces the same delay a paused debugger
+ // would. This relies on console formatting instead: a getter on a logged object's property
+ // is only evaluated when something actually renders that log entry, which in practice means
+ // an open, visible devtools console panel. Its own false positive: a browser extension that
+ // hooks and formats console output, such as a logger or React or Redux devtools, can trigger
+ // the getter with nobody watching, and a hit says nothing about which panel is in front.
+ // Checked on an interval, sent at most once per view.
+ var devtoolsSent=false;
+ var devtoolsTimer=setInterval(function(){
+  if(devtoolsSent) return;
+  var probe={};
+  Object.defineProperty(probe,'id',{get:function(){
+   if(!devtoolsSent){devtoolsSent=true;send('devtools_open',{});clearInterval(devtoolsTimer);}
+   return '';
+  }});
+  console.log(probe);
+ },1500);
+ // Selection tripwire: same send() shape and vocabulary as the contextmenu tripwire above,
+ // debounced so dragging across a slide produces one event and not hundreds. Fires only once
+ // the selection settles, and only when there is text in it; a plain click that collapses the
+ // selection sends nothing.
+ var selTimer=null;
+ document.addEventListener('selectionchange',function(){
+  clearTimeout(selTimer);
+  selTimer=setTimeout(function(){
+   var sel=window.getSelection?window.getSelection():null;
+   if(sel&&sel.toString().length>0){send('tripwire',{reason:'selection',slideId:current&&current.id});}
+  },400);
+ });
 })();
 `;
