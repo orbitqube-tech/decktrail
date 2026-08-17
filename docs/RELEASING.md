@@ -46,25 +46,20 @@ Then:
    git tag -a v0.2.0 -m "0.2.0: one command to install, one line to steer a deck"
    ```
 
-5. **Push the commit and the tag to both remotes, canonical first.** A version that exists in one
-   and not the other is worse than no version.
-
-   | Remote | Role | Where |
-   |---|---|---|
-   | `gitlab` | **Canonical.** Work happens here. | `gitlab.com/orbitqube/solutions/decktrail/decktrail` |
-   | `origin` | **Public mirror.** Never branch, merge or commit against it. | `github.com/orbitqube-tech/decktrail` |
+5. **Push the commit and the tag together.** A tag that exists without the commit it names, or a
+   commit that reaches one remote and not another, is worse than no version at all.
 
    ```sh
-   git push gitlab main && git push gitlab v0.2.0
    git push origin main && git push origin v0.2.0
    ```
 
-   The order is the point. Two remotes with no stated roles become two sources of truth, and they
-   drift the first time a push reaches one and not the other, leaving nobody able to say which is
-   right. Push the canonical remote, confirm the commit actually landed there by reading the
-   remote rather than the exit code (`git ls-remote gitlab refs/heads/main`), and only then
-   mirror. If the mirror is ever wrong, fix it on the canonical remote and push again rather than
-   committing against the mirror.
+   **Confirm it landed by reading the remote, not the exit code.** `git ls-remote origin
+   refs/heads/main` asks the server; `git rev-parse origin/main` reads a file on your own disk
+   and can be stale in either direction. Compare the SHA it prints against your local `HEAD`.
+
+   If you keep more than one remote, give them stated roles and push them in a fixed order, one
+   at a time, confirming each before the next. Two remotes with no stated roles become two
+   sources of truth and drift the first time a push reaches one and not the other.
 
 Pushes are sequential and human-paced. There is no continuous integration doing this, on purpose.
 

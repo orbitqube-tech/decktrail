@@ -79,7 +79,7 @@ you can put it in front of real users before building more.
 DeckTrail is open source under the AGPL.
 
 **PAT (Personal Access Token).** A secret string that stands in for a password when a program
-authenticates to a service such as GitLab. It is never shared or printed.
+authenticates to a service such as a code host or a mail provider. It is never shared or printed.
 
 **SMTP (Simple Mail Transfer Protocol).** The standard language email servers use to hand
 messages to each other. DeckTrail sends its sign-in links over SMTP, through whatever mail
