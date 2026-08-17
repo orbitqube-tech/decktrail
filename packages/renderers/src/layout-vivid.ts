@@ -54,7 +54,11 @@ table.st tfoot td{color:var(--accent);border-bottom:none;border-top:3px solid va
 .stats{gap:calc(20px * var(--scale))}
 .stat{border-radius:3px;background:var(--accent);box-shadow:6px 6px 0 0 var(--bg);padding:calc(24px * var(--scale))}
 .stat:nth-child(even){background:var(--accent2)}
-.stat .v{color:var(--bg);font-size:calc(48px * var(--scale));letter-spacing:-2px}
+/* A stat value is usually short, and sometimes it is a word rather than a number. Allowed to
+   break and to shrink with its column, so a long one cannot run out over its neighbour. */
+.stat{min-width:0}
+.stat .v{color:var(--bg);font-size:calc(48px * var(--scale));letter-spacing:-2px;
+ overflow-wrap:anywhere;max-width:100%}
 .stat .v.good{color:var(--bg)}
 .stat .v.warn{color:var(--bg)}
 .stat .v.bad{color:var(--bg)}

@@ -86,11 +86,18 @@ table.st tfoot td{border-top:2px solid var(--heading);border-bottom:0;}
 /* Pull-figures: large serif numerals over a small letter-spaced label, the way a magazine sets a
    headline statistic. The hairline between figures does the work the card fill used to. */
 .stats{gap:0;}
-.stat{background:none;border-radius:0;padding:0 34px;}
+/* min-width:0 because a grid item defaults to min-content width, so a long unbroken value
+   pushes its own column wider than the track and out over its neighbour. */
+.stat{background:none;border-radius:0;padding:0 34px;min-width:0;}
 .stat:first-child{padding-left:0;}
 .stat + .stat{border-left:1px solid color-mix(in srgb,var(--muted) 24%,transparent);}
-.stat .v{font-weight:300;font-size:calc(clamp(46px,6vw,96px) * var(--scale));
- letter-spacing:-.02em;line-height:1;}
+/* Sized for a word, not only for a number. A stat value is usually short ("62%", "3x") and the
+   first draft of this rule assumed it always was, at up to 96px before the theme scale. A deck
+   that puts a word there instead ("Attribute") then ran straight through its neighbour, because
+   nothing was wrapping and nothing was bounded by the column. The figure still reads as a pull
+   figure; it just cannot exceed its own cell any more. */
+.stat .v{font-weight:300;font-size:calc(clamp(34px,4.2vw,64px) * var(--scale));
+ letter-spacing:-.02em;line-height:1.02;overflow-wrap:anywhere;hyphens:auto;max-width:100%;}
 .stat .k{text-transform:uppercase;letter-spacing:.12em;margin-top:14px;}
 
 .chart{max-width:64ch;}
