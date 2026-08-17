@@ -43,14 +43,33 @@ function fail(msg) {
   throw new Error(msg);
 }
 
-/** The portal logs its magic links when SMTP is unset, which is where a local run reads them. */
+/**
+ * The portal logs its magic links when SMTP is unset, which is where a local run reads them.
+ *
+ * Reads the WHOLE log, not a recent slice. This used to ask for the last 60 seconds, which made
+ * the check a stopwatch: this harness runs headed with a deliberate 350ms delay per step so a
+ * person can watch it, so on a loaded machine, or one that just rebuilt the image, the link fell
+ * outside the window and the run failed saying no link had been sent. That message accuses the
+ * mailer, which was never the thing that was slow. Taking the last match is what makes the link
+ * the current one, and it does that whether the log covers a minute or an hour, so the window was
+ * buying nothing and costing a false failure. `setupUrl` below has always read the full log.
+ */
 function linkFor(email) {
-  const logs = execSync("docker compose logs --since 60s portal", { encoding: "utf8" });
+  const logs = execSync("docker compose logs portal", { encoding: "utf8" });
   const re = new RegExp(`${email.replace(/[.@+]/g, "\\$&")}: (https?://\\S+)`, "g");
   const all = [...logs.matchAll(re)].map((m) => m[1]);
   const url = all.at(-1);
-  if (!url) fail(`no magic link was sent to ${email}`);
-  return url.replace(/^https:\/\/localhost:3000/, "http://localhost:3000");
+  if (!url) {
+    fail(
+      `no magic link for ${email} anywhere in the portal log. ` +
+        `The log held ${logs.split("\n").length} lines and ${[...logs.matchAll(/\[magic-link\]/g)].length} magic-link entries. ` +
+        `If that second number is zero, the portal never sent one; if it is not, the address did not match.`,
+    );
+  }
+  // The portal builds its links from DT_BASE_HOST, so the host and port here follow BASE rather
+  // than a literal. A hardcoded port silently stopped rewriting the moment a run used a free one.
+  const { host } = new URL(BASE);
+  return url.replace(new RegExp(`^https://${host.replace(/[.]/g, "\\.")}`), `http://${host}`);
 }
 
 function setupUrl() {
