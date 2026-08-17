@@ -9,6 +9,16 @@ overrides:
   # waiting for a fix that is not coming. 0.25.12 is the version drizzle-kit already depends
   # on directly, so this deduplicates rather than adding a package.
   "@esbuild-kit/core-utils>esbuild": "0.25.12"
+  # fastify reaches fast-uri through two separate paths, its JSON serialiser and its schema
+  # compiler, and both resolved to 3.1.4. That version confuses a backslash for an authority
+  # introducer, so a URL can be read as pointing at a different host than it does
+  # (GHSA-fmm8-2r27-j7gr). The portal decides who may read a deck partly from host, so this is
+  # not academic here. 3.1.5 is a patch on the same major, which is why it is safe to pin
+  # forward rather than wait for fastify to move.
+  fast-uri: "^3.1.5"
+  # Reached only through @fastify/static's own glob and minimatch. 5.0.7 expands braces without
+  # bound, so a crafted pattern exhausts memory. 5.0.9 is a patch on the same major.
+  brace-expansion: "^5.0.9"
 allowBuilds:
   esbuild: true
   # The optional recognition engine. Its install script exists to download the GPU execution
