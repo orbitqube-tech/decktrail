@@ -76,6 +76,39 @@ describe("summarize, the devtools signal", () => {
   });
 });
 
+describe("summarize, the protection signals", () => {
+  it("counts copy, print and download attempts, and tripwires by reason", () => {
+    const events: EventRecord[] = [
+      ev({ type: EVENT.copyAttempt, ts: "2026-07-14T10:00:00Z", artifactId: "deck1", recipient: "priya@acme.example" }),
+      ev({ type: EVENT.copyAttempt, ts: "2026-07-14T10:01:00Z", artifactId: "deck1", recipient: "sam@acme.example" }),
+      ev({ type: EVENT.printAttempt, ts: "2026-07-14T10:02:00Z", artifactId: "deck1", recipient: "priya@acme.example" }),
+      ev({ type: EVENT.downloadAttempt, ts: "2026-07-14T10:03:00Z", artifactId: "deck1", recipient: "priya@acme.example" }),
+      ev({ type: EVENT.tripwire, ts: "2026-07-14T10:04:00Z", artifactId: "deck1", recipient: "priya@acme.example", meta: { reason: "contextmenu" } }),
+      ev({ type: EVENT.tripwire, ts: "2026-07-14T10:05:00Z", artifactId: "deck1", recipient: "sam@acme.example", meta: { reason: "contextmenu" } }),
+      ev({ type: EVENT.tripwire, ts: "2026-07-14T10:06:00Z", artifactId: "deck1", recipient: "priya@acme.example", meta: { reason: "selection" } }),
+      // An unrelated event type must not inflate any of the counts above.
+      ev({ type: EVENT.slideView, ts: "2026-07-14T10:07:00Z", artifactId: "deck1", recipient: "priya@acme.example", meta: { slideId: "cover", dwellMs: 1000 } }),
+    ];
+    const s = summarize(events);
+    expect(s.copyAttempts).toBe(2);
+    expect(s.printAttempts).toBe(1);
+    expect(s.downloadAttempts).toBe(1);
+    expect(s.tripwires).toBe(3);
+    expect(s.tripwireReasons).toEqual({ contextmenu: 2, selection: 1 });
+  });
+
+  it("counts none of the protection signals when no such event was ever recorded", () => {
+    const s = summarize([
+      ev({ type: EVENT.slideView, ts: "2026-07-14T10:00:00Z", artifactId: "deck1", recipient: "priya@acme.example", meta: { slideId: "cover", dwellMs: 1000 } }),
+    ]);
+    expect(s.copyAttempts).toBe(0);
+    expect(s.printAttempts).toBe(0);
+    expect(s.downloadAttempts).toBe(0);
+    expect(s.tripwires).toBe(0);
+    expect(s.tripwireReasons).toEqual({});
+  });
+});
+
 describe("toCsv", () => {
   it("writes a header and escapes quotes and embedded commas", () => {
     const csv = toCsv([ev({ type: EVENT.deckOpen, ts: "2026-07-14T10:00:00Z", recipient: "user@decktrail.orbitqube", ua: 'X, "Y"' })]);

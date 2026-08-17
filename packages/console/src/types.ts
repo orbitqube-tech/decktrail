@@ -53,6 +53,11 @@ export interface AnalyticsSummary {
   reading: ReadingStat[];
   completions: number;
   devtoolsOpens: number;
+  copyAttempts: number;
+  printAttempts: number;
+  downloadAttempts: number;
+  tripwires: number;
+  tripwireReasons: Record<string, number>;
 }
 export interface AuthConfig {
   turnstileSitekey: string | null;

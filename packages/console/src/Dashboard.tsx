@@ -3,16 +3,34 @@ import { OpensPulse, DeckBars } from "./charts";
 import { ago, duration } from "./format";
 import type { AnalyticsSummary } from "./types";
 
-function Tile({ label, value, alert }: { label: string; value: number; alert?: boolean }): React.ReactElement {
+function Tile({
+  label,
+  value,
+  alert,
+  detail,
+}: {
+  label: string;
+  value: number;
+  alert?: boolean;
+  detail?: string;
+}): React.ReactElement {
   return (
     <div className={alert ? "tile alert" : "tile"}>
       <div className="k">{label}</div>
       <div className="v num">{value}</div>
+      {detail ? <div style={{ color: "var(--muted)", fontSize: 12, marginTop: 6 }}>{detail}</div> : null}
     </div>
   );
 }
 
 export function Dashboard({ data }: { data: AnalyticsSummary }): React.ReactElement {
+  // Which tripwire fired, not just that one did: contextmenu, selection, or whatever else the
+  // beacon later adds. Most frequent first, so the reader sees the dominant one at a glance.
+  const tripwireDetail = Object.entries(data.tripwireReasons)
+    .sort((a, b) => b[1] - a[1])
+    .map(([reason, count]) => `${reason} ${count}`)
+    .join(", ");
+
   return (
     <main>
         <div className="tiles">
@@ -139,6 +157,21 @@ export function Dashboard({ data }: { data: AnalyticsSummary }): React.ReactElem
             )}
           </section>
         </div>
+
+        <section className="panel">
+          <div className="eyebrow">Protection</div>
+          <h2>Viewer attempts</h2>
+          <p className="cap">
+            Actions a signed-in reader took against the deck&apos;s copy protection. This is a
+            viewer on their own copy, not the bot traffic in Scrape attempts below.
+          </p>
+          <div className="tiles">
+            <Tile label="Copy attempts" value={data.copyAttempts} alert />
+            <Tile label="Print attempts" value={data.printAttempts} alert />
+            <Tile label="Download attempts" value={data.downloadAttempts} alert />
+            <Tile label="Tripwires" value={data.tripwires} alert detail={tripwireDetail || undefined} />
+          </div>
+        </section>
 
         <section className="panel trip">
           <div className="eyebrow">Tripwire</div>

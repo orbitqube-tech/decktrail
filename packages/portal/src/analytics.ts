@@ -176,6 +176,21 @@ export interface AnalyticsSummary {
    * a possible inspection rather than a proven one.
    */
   devtoolsOpens: number;
+  /** How many times a reader tried to copy or cut text from the deck. */
+  copyAttempts: number;
+  /** How many times a reader tried to print the deck. */
+  printAttempts: number;
+  /** How many times a reader tried to save or download the deck. */
+  downloadAttempts: number;
+  /** How many times a protection tripwire fired, across every reason. */
+  tripwires: number;
+  /**
+   * Tripwire count by reason, from the beacon's meta.reason (currently "contextmenu" or
+   * "selection", see beacon.ts). An owner wants to know which tripwire fired, not just that
+   * one did. A reason sanitizeMeta did not carry through, or that a viewer's browser never
+   * set, is counted under "unknown" rather than dropped.
+   */
+  tripwireReasons: Record<string, number>;
 }
 
 /**
@@ -276,6 +291,15 @@ export function summarize(events: EventRecord[]): AnalyticsSummary {
     .filter((e) => e.type === EVENT.botBlocked)
     .map((e) => ({ ts: e.ts.toISOString(), ip: e.ip ?? null, ua: e.ua ?? null }));
 
+  // Tripwire reason is viewer-supplied text that already passed sanitizeMeta on the way in, so
+  // it is safe to read here, but a missing or stripped reason still must not be dropped silently.
+  const tripwireReasons: Record<string, number> = {};
+  for (const e of events) {
+    if (e.type !== EVENT.tripwire) continue;
+    const reason = typeof e.meta?.reason === "string" ? e.meta.reason : "unknown";
+    tripwireReasons[reason] = (tripwireReasons[reason] ?? 0) + 1;
+  }
+
   // ---- reading: the per-slide browser events, rolled up ----------------------------------
   // slide_view carries {slideId, dwellMs}; deck_complete carries {slidesViewed, totalSlides,
   // completion} with completion as a percentage. Both are viewer-supplied and already bounded
@@ -371,6 +395,11 @@ export function summarize(events: EventRecord[]): AnalyticsSummary {
     reading,
     completions: events.filter((e) => e.type === EVENT.deckComplete).length,
     devtoolsOpens: events.filter((e) => e.type === EVENT.devtoolsOpen).length,
+    copyAttempts: events.filter((e) => e.type === EVENT.copyAttempt).length,
+    printAttempts: events.filter((e) => e.type === EVENT.printAttempt).length,
+    downloadAttempts: events.filter((e) => e.type === EVENT.downloadAttempt).length,
+    tripwires: events.filter((e) => e.type === EVENT.tripwire).length,
+    tripwireReasons,
   };
 }
 
