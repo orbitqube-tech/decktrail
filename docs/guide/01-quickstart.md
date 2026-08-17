@@ -81,6 +81,10 @@ http://localhost:3000/setup?token=4pa3XVotf6yHj9ngWOHvhTwNBTPdOTLN
 | **SMTP fields** | Leave blank for now. See step 4. | No |
 | **Share anonymous usage** | Your call. Off by default. [What it sends](05-configuration.md#telemetry). | No |
 
+If you do fill in SMTP fields, **Send a test message** sends one using exactly what is currently
+typed into the form, not anything already saved, and reports the mail server's own error if it
+fails. It never falls back to logging the way sending later does when mail is unconfigured.
+
 Press **Finish setup**. You land on your console.
 
 ## 4. Sign in

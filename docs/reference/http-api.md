@@ -38,6 +38,7 @@ distinct from the admin session.
 |---|---|---|
 | POST | `/admin/publish` | Publishes an IR document as a new immutable version in its workspace. |
 | POST | `/admin/shares` | Mints a per-recipient share link for a published artifact. |
+| DELETE | `/admin/shares/:id` | Revokes a share. The link stops resolving, and the session it granted ends too. Answers `204`, including for an already-revoked or unknown id. |
 
 ## Admin-session routes (the console)
 

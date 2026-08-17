@@ -52,6 +52,16 @@ Publish the same slug again and you get **version 2**, not a duplicate. A share 
 version it was created for, so revising a deck never changes what a client who already holds a
 link sees, until you deliberately send the newer version (decision D10).
 
+A share can also be withdrawn. `decktrail revoke <shareId>` ends it: the link stops resolving,
+and if that person was already signed in and reading, their session ends with it, not only their
+future visits.
+
+```sh
+decktrail revoke shr_HKRBVjspyK_jSO9b --portal http://localhost:3000 --token "$TOKEN"
+```
+
+Safe to run again on the same share, or on one that never existed; both answer the same way.
+
 ---
 
 ## How a client opens it
@@ -109,6 +119,11 @@ Sign in to `/admin` as the owner. The dashboard answers "who read what, and how 
 - **Opens over time:** every time a recipient opened one of your decks.
 - **Most opened:** which decks get read.
 - **Who is reading:** each recipient, their open count, and when they were last seen.
+- **Viewer attempts:** what a signed-in reader did against the deck's own copy protection, on
+  their own copy: copy, print, and download attempts, plus tripwires, broken down by reason. A
+  protected deck's stylesheet prevents selecting text, so the selection tripwire fires only once
+  a reader has actually defeated it; it does not record an ordinary drag across the page. This is
+  separate from scrape attempts below, which is bot traffic, not a viewer.
 - **Tripwire:** requests from known AI and crawler agents, refused at the door with a 403 and
   logged against the attempt.
 - **Audit log (CSV):** the full event trail to export.

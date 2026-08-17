@@ -173,7 +173,7 @@ Runs once, at `/setup`, gated by a token printed in the container log. See
 |---|---|---|
 | Admin email | `admin_email` | Who owns this portal. This address, and only this address, reaches `/admin`. |
 | Brand name | `brand_name` | Shown to your clients on the sign-in page and in emails. Not DeckTrail's name; yours. |
-| SMTP fields | `smtp_*` | **Overridden by `.env` if set there.** |
+| SMTP fields | `smtp_*` | **Overridden by `.env` if set there.** A **Send a test message** button on the form sends a real message using whatever is currently typed in, not anything saved, and reports the mail server's own error on failure. It only exists during setup. |
 | Share anonymous usage | `telemetry_optin` | Off unless you tick it. |
 
 ---

@@ -30,7 +30,7 @@ validates too, but this one is the cheap check that tells you which field is wro
 
 ---
 
-## `render <file> [--out <file>] [--theme <file>|<name>] [--public | --confidential <text>]`
+## `render <file> [--out <file>] [--theme <file>|<name>] [--layout <name>] [--public | --confidential <text>]`
 
 Render an IR file to one self-contained HTML file. No portal involved, no watermark, no
 tracking: this is the "hand someone a file" path.
@@ -302,6 +302,29 @@ made from, so republishing cannot change what someone was already sent.
 
 ---
 
+## `revoke <shareId> [--portal <url>] [--token <token>]`
+
+End a share now.
+
+```sh
+decktrail revoke shr_HKRBVjspyK_jSO9b --portal https://decks.you.com --token "$DT_ADMIN_TOKEN"
+```
+
+```
+revoked: shr_HKRBVjspyK_jSO9b
+```
+
+The link stops resolving, and anyone who already signed in through it loses that session too, not
+only future visits: a revoke cannot leave someone still reading the deck. Safe to run again on the
+same share, or on one that never existed; both answer the same way.
+
+| Flag | Effect |
+|---|---|
+| `--portal <url>` | **Required.** Your portal. |
+| `--token <token>` | **Required.** The admin token. See [Configuration](../guide/05-configuration.md#reading-a-generated-secret-back). |
+
+---
+
 ## `brand <url> [--out <file>]`
 
 Read a website's colours and type into a `theme.json`.
@@ -348,6 +371,8 @@ path meets constantly.
 | `--ocr auto\|never\|force` | When to read a page as a picture. Default `auto`. |
 | `--ocr-lang <code>` | Language for reading pictures. Default `eng`. |
 | `--ocr-lang-path <dir>` | A local directory of language data, which makes reading fully offline. |
+| `--ocr-tier auto\|tiny\|small\|medium\|server` | Which recognition model to spend on a scan. Default `auto`. Reach for a larger tier when a scan came back wrong. |
+| `--ocr-model-path <dir>` | A local directory of recognition model files, instead of fetching them, which is what makes a run fully offline. |
 
 **Why this command exists.** A PDF or a deck carries its text inside it, so extraction is exact.
 A scan or a photograph does not, and the words have to be read off the picture, which is never
@@ -416,6 +441,8 @@ column exists to make visible.
 | When to read a page as a picture | `DT_OCR_MODE` | `auto` |
 | Language for reading pictures | `DT_OCR_LANG` | `eng` |
 | Local language data directory | `DT_OCR_LANG_PATH` | not set |
+| Recognition tier for reading pictures | `DT_OCR_TIER` | `auto` |
+| Local recognition model directory | `DT_OCR_MODEL_PATH` | not set |
 
 ```json
 {

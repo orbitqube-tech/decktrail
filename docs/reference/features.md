@@ -28,6 +28,7 @@ The second and third lists are the point. Any product page can tell you what it 
 | **Neutral answers** | "Check your email" whether or not the address is invited, so nobody can probe your client list. |
 | **Sessions end when you say so** | Signing someone out revokes their session, and their next request stops. |
 | **A door for your client** | A sign-in page wearing **your** brand, at the deck link, that returns them to the deck once they are in. |
+| **Revoking a share** | `decktrail revoke <shareId>` ends a share now. The link stops resolving, and anyone already signed in through it loses that session too, not only future visits. Safe to run again on the same share. |
 
 ### Knowing what happened
 
@@ -81,7 +82,6 @@ Sound designs, worth building, currently absent. See `docs/THREAT-MODEL.md` for 
 | **Steganographic fingerprinting** | An invisible per-recipient mark surviving a screenshot. Not built. The visible watermark carries attribution today. |
 | **AI attribution beacon** | Invisible text so a model reworking your deck stamps the client's own name into its output. Not built. |
 | **Protection tiers** | Open / Tracked / Guarded / Vault is a design. Every deck is Tracked. There is no selector. |
-| **Revoking a share** | A share carries a `revoked_at` column and serving honours it, but nothing sets it: there is no route and no control. Sessions can be ended; a share cannot yet be withdrawn. |
 | **Emailing the share link** | `push --recipient` mints the link and lets that person sign in. **You still send the link yourself.** |
 | **Devtools detection** | Not built, and it will not be. A page cannot observe the browser's own interface, and every technique reports a docked panel or a slow machine as an inspection. Measured, see `docs/DECISIONS.md` D33. |
 
