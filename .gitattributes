@@ -4,6 +4,11 @@
 # file with LF endings can mis-parse the parenthesised blocks cmd.exe uses for if/else. Both are
 # checked in from a Windows machine, so neither can be left to whatever the working copy happens to
 # have.
+# Git hooks are shell scripts with no extension, so the *.sh rule below does not reach them. A
+# hook checked out with CRLF fails with a "bad interpreter" error that names the shell rather than
+# the line endings, which is a long way to walk for a wrong newline.
+.githooks/* text eol=lf
+
 *.sh   text eol=lf
 *.command text eol=lf
 *.mjs  text eol=lf

@@ -85,9 +85,13 @@ dash has to name the character it is looking for. Do not "fix" those.
 **7. No hardcoded values.** One authoritative home per setting. This project exists because the
 prior art hardcoded a brand.
 
-**8. Commits carry no AI attribution.** A `commit-msg` hook in `.githooks/` enforces it. It
-also pins the author to the maintainer, so **do not enable it on a fork**; see
-`CONTRIBUTING.md`.
+**8. Commits carry no AI attribution.** A `commit-msg` hook in `.githooks/` enforces it, and the
+hook is in the repository so a fresh clone actually has it. Git ignores the directory until you
+run `git config core.hooksPath .githooks`, so it is inert until you opt in, and its author check
+stays off unless you set `decktrail.expectedAuthor`. That makes it safe on a fork; see
+`CONTRIBUTING.md`. It was untracked for a long time while both files claimed otherwise, which is
+the shape to watch for: `core.hooksPath` pointing at a missing directory runs no hook and reports
+no error, so the documentation was the only thing that knew, and it was wrong.
 
 ## Layout
 

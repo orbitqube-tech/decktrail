@@ -28,10 +28,17 @@ Thumbs.db
 coverage/
 tmp/
 
-# The commit-msg hook is the maintainer's: it pins the author to one identity and would reject
-# a contributor's own commits. It is installed per clone from the maintainer's rulebook, and
-# hooks are never fetched by git anyway, so shipping it would help nobody and mislead someone.
-.githooks/
+# .githooks/commit-msg IS tracked, on purpose: CONTRIBUTING.md tells you to point
+# core.hooksPath at this directory, and that instruction was a lie for as long as the directory
+# was not in the repository. Git runs no hook and reports no error when core.hooksPath names a
+# directory that does not exist, so the protection was silently absent for anyone who followed
+# the documentation. The hook is inert until you opt in, and its author check is off unless you
+# set decktrail.expectedAuthor, so it is safe on a fork.
+#
+# These two are different: they belong to a local knowledge-graph tool, they need that tool and a
+# Python interpreter to run at all, and nothing in this project reads what they produce.
+.githooks/post-commit
+.githooks/post-checkout
 
 # Webfonts fetched by scripts/fetch-fonts.mjs at deploy or first run. Generated, and not
 # ours to redistribute in the repository: each deploy fetches its own copy.

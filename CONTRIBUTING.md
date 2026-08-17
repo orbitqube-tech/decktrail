@@ -22,14 +22,25 @@ pnpm test
 The repository carries a `commit-msg` hook that rejects any commit message crediting an AI
 tool: a `Co-Authored-By` trailer, a "Generated with ..." line, or the robot-emoji footer. It is
 deliberately anchored to line starts, so writing *about* Claude or naming `CLAUDE.md` in a
-message passes; only attribution is refused.
+message passes; only attribution is refused. It also refuses an empty message and a placeholder
+subject such as `wip`.
 
-**It is the maintainer's, and it also pins the author to the maintainer's identity.** Do not
-install it on a fork: it would reject your own commits, which is not what it is for.
+Git does not read this directory unless you tell it to, so the hook does nothing until you opt
+in. You are welcome to:
 
 ```sh
-git config core.hooksPath .githooks   # maintainer only
+git config core.hooksPath .githooks
 ```
+
+**Optionally**, it can also check that commits carry the identity you expect, which catches a
+machine default such as `user@hostname` or somebody else's cached configuration before the commit
+exists. That check is off unless you switch it on, per clone, with your own identity:
+
+```sh
+git config decktrail.expectedAuthor "Your Name <you@example.com>"
+```
+
+Unset it with `git config --unset decktrail.expectedAuthor`.
 
 The repository is a pnpm workspace. Each package (`ir`, `renderers`, `portal`, `studio`,
 `console`) has its own `typecheck` and `test` scripts; `pnpm -r <script>` runs across all of

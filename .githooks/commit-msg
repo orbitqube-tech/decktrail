@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+#
+# Rejects a commit message that credits an AI tool, and a message that says nothing.
+#
+# Enable it in your clone, once:
+#
+#     git config core.hooksPath .githooks
+#
+# It is inert until you do that, because git does not read this directory by default.
+#
+# WHY A HOOK RATHER THAN A LINE IN CONTRIBUTING.md. Tools that write commit messages append an
+# attribution footer by default, and a contributor who has read the rule still ships one on a busy
+# day, because the default is in the tool and the rule is in a file. A rule that depends on
+# everyone remembering it holds until the first person forgets. This is the same move as a
+# constraint in the database rather than a check in the application: put the check where it cannot
+# be walked past.
+#
+# DELIBERATELY CONSERVATIVE. Every pattern is anchored to the start of a line and matches an
+# attribution TRAILER or a generated-by FOOTER, never the appearance of a word. Writing about
+# Claude in a commit body is prose and passes. Naming CLAUDE.md in a message passes. A contributor
+# whose name happens to contain "Ai" passes. That restraint is not fastidiousness: a false
+# rejection teaches people to type --no-verify, and a hook everyone bypasses enforces nothing.
+
+set -euo pipefail
+
+MSG_FILE="$1"
+FAIL=0
+
+# Comment lines are stripped by git and are not part of the message.
+CONTENT="$(grep -v '^#' "$MSG_FILE" || true)"
+
+# ---------------------------------------------------------------- 1. no AI attribution
+
+AI_NAMES='Claude|Anthropic|ChatGPT|OpenAI|GPT-[0-9]|GPT[0-9]|Codex|Copilot|Gemini|Cursor|Windsurf|Devin|Aider|Tabnine|CodeWhisperer|Llama|Mistral|DeepSeek|Grok'
+
+# Machine identities that are never a person. Only ever tested inside a trailer, below, so an
+# address quoted in prose does not trip it.
+AI_EMAILS='noreply@anthropic\.com|@openai\.com|copilot@|@users\.noreply\.github\.com|bot@|\[bot\]'
+
+# A git trailer starts its own line, which is what the anchor here relies on.
+TRAILER="^[[:space:]]*(Co-Authored-By|Co-Author|Co-Developed-By|Assisted-By|Signed-off-by|Helped-by)[[:space:]]*:.*(${AI_NAMES}|${AI_EMAILS}|[[:space:]]bot[[:space:]>]|\bAI\b|AI Assistant|assistant)"
+
+# The "look what wrote this" footer a harness appends, which is always at a line start.
+AI_FOOTER="^[[:space:]]*(🤖|(Generated|Written|Authored|Created)[[:space:]]+(with|by)[[:space:]]+[^\"'‘“]*(${AI_NAMES}))"
+
+for pattern in "$TRAILER" "$AI_FOOTER"; do
+  if printf '%s' "$CONTENT" | grep -qE "$pattern"; then
+    if [ "$FAIL" -eq 0 ]; then
+      cat >&2 <<'REASON'
+
+  COMMIT REJECTED. There is AI attribution in the commit message.
+
+  DeckTrail's history credits the people who contributed. Do not add a
+  Co-Authored-By trailer, a "Generated with ..." footer, or a robot emoji
+  naming a tool.
+
+  Offending line(s):
+REASON
+    fi
+    printf '%s' "$CONTENT" | grep -nE "$pattern" | sed 's/^/      /' >&2
+    FAIL=1
+  fi
+done
+
+if [ "$FAIL" -eq 1 ]; then
+  cat >&2 <<'FIX'
+
+  Remove the attribution and commit again. The message itself is almost always
+  fine. It is only the footer that is refused.
+
+FIX
+  exit 1
+fi
+
+# ---------------------------------------------------------------- 2. optional author pin
+#
+# Off unless you turn it on, so this hook is safe to enable on a fork. Set it per clone:
+#
+#     git config decktrail.expectedAuthor "Your Name <you@example.com>"
+#
+# A commit-msg hook runs after git has resolved the author, so this catches a machine default
+# identity such as user@hostname, a cached config belonging to somebody else, or a stray --author,
+# before the commit exists rather than after it has been pushed.
+
+EXPECTED="$(git config --get decktrail.expectedAuthor || true)"
+
+if [ -n "$EXPECTED" ]; then
+  ACTUAL="$(git var GIT_AUTHOR_IDENT 2>/dev/null | sed -E 's/^(.*>).*$/\1/' || true)"
+  if [ "$ACTUAL" != "$EXPECTED" ]; then
+    cat >&2 <<EOF
+
+  COMMIT REJECTED. The author is not the one this clone expects.
+
+      expected:  ${EXPECTED}
+      got:       ${ACTUAL}
+
+  Fix the configuration rather than the commit:
+
+      git config user.name  "..."
+      git config user.email "..."
+
+  Do not pass --author to work around this. If the identity is wrong, the
+  configuration is the thing that is wrong.
+
+  This check exists only because this clone set decktrail.expectedAuthor. Unset
+  it with: git config --unset decktrail.expectedAuthor
+
+EOF
+    exit 1
+  fi
+fi
+
+# ---------------------------------------------------------------- 3. a message says something
+
+if [ -z "$(printf '%s' "$CONTENT" | tr -d '[:space:]')" ]; then
+  echo "  COMMIT REJECTED. The commit message is empty." >&2
+  exit 1
+fi
+
+SUBJECT="$(printf '%s' "$CONTENT" | grep -v '^[[:space:]]*$' | head -1)"
+if printf '%s' "$SUBJECT" | grep -qiE '^[[:space:]]*(wip|temp|tmp|test|asdf|fix|update|changes|stuff|misc|\.)[[:space:]]*$'; then
+  cat >&2 <<EOF
+
+  COMMIT REJECTED. That is a placeholder, not a commit message: "${SUBJECT}"
+
+  The message is the record of what changed and why. It is the first thing
+  anyone reads when this line turns out to be the one that broke something.
+
+EOF
+  exit 1
+fi
+
+exit 0
