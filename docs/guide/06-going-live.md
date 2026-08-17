@@ -5,7 +5,7 @@ on a real domain. Nothing here is DeckTrail-specific magic; it is the standard s
 container on the internet, with the few settings DeckTrail needs called out.
 
 Take it as a deliberate step after you have used the thing in your own hands, not a rush. Prove
-it, then cut over, keeping a one-command rollback (decision D11).
+it, then cut over, and keep a one-command rollback the whole way.
 
 ---
 

@@ -8,11 +8,10 @@ reasoning is the useful part.
 This is the one document that talks about how DeckTrail got here. Everywhere else describes the
 product as it is.
 
-**The prior art** is the bespoke system DeckTrail generalises: a hand-built deck portal serving a
-handful of clients, with the brand, the watermark and the design opinions hardcoded into every
-file. It is referenced where a decision only makes sense against what came before. You have not
-seen it and do not need to; DeckTrail exists because that system could not be given to anybody
-else.
+**The prior art** is the bespoke predecessor DeckTrail generalises: a hand-built deck portal with
+the brand, the watermark and the design opinions written as literals into every file. It is
+referenced below where a decision only makes sense against what came before. DeckTrail exists
+because a system built that way fits exactly one operator and cannot be given to anybody else.
 
 ---
 
@@ -133,19 +132,15 @@ every layout reads from the same theme tokens. This is the quality moat.
 
 ## D8. Fresh repo, lifting the auth module from the prior art
 
-**Decision:** This is a new repository, not a mutation of the live production system.
-The magic link authentication core is carried over close to verbatim. Everything else is
-rebuilt.
+**Decision:** This is a new repository rather than a mutation of the prior art. The magic link
+authentication core is carried over close to verbatim. Everything else is rebuilt.
 
-**Why:** The prior art is live and four real clients depend on it. The IR change touches
-the serving path, the content path, and the theming, which is most of the code. The auth
-core is the one part that is genuinely good and worth keeping: HMAC (hash based message
-authentication code) tokens, single use with an atomic claim, hashed at rest, and a
-neutral response so invite lists never leak.
+**Why:** Moving to the IR touches the serving path, the content path and the theming, which is
+most of the code, so there was little left to mutate. The auth core is the one part worth keeping
+as it stands: HMAC (hash based message authentication code) tokens, single use with an atomic
+claim, hashed at rest, and a neutral response so invite lists never leak.
 
-**Status:** Settled. The auth core is lifted from an existing magic-link implementation, and the
-maintainer's own production portal runs on the open-source product rather than a separate fork, so
-the product is dogfooded on real client use rather than a demo.
+**Status:** Settled.
 
 ---
 
@@ -246,27 +241,6 @@ events.
 
 ---
 
-## D11. Build end to end, dogfood for one to two weeks, then launch publicly
-
-**Decision:** Build the product end to end (portal,
-generation, and the guard/versioning features) as a working whole first. Use it on
-real OrbitQube engagements for one to two weeks as a soak period. Only then launch
-publicly. The public launch lands on the differentiated story (AI-extraction defence
-plus honest tracking), never on the commodity "another Papermark" story.
-
-**Why:** You get one Hacker News front page; spending it on a worse Papermark wastes
-it. A short but real self-use soak surfaces the rough edges before strangers see
-them, and matches the operator-owned "enable, soak, go live" discipline: the public
-launch is a deliberate step taken after the thing has proven itself in your own hands,
-never auto-triggered.
-
-**Cost accepted:** later time to first star than launching at P0, and it front-loads
-more build before any external validation. Q4 (does the market feel the AI-extraction
-fear) should be answered during this window, not after, so a two-week soak also
-doubles as a validation window.
-
----
-
 ## D12. Voice ships as presets with a neutral default, and the tool carries a configurable backlink
 
 **Decision:** The OrbitQube house style ships as one named voice preset among
@@ -310,16 +284,15 @@ zero-downtime cutover.
 - Analytics stays at `/analytics`.
 
 **Existing-deck migration (zero downtime):**
-- Each existing deck is imported into the new system as a versioned deck, and the old
-  paths (for example `/acme/decks`) are aliased so they resolve to the imported
-  deck's pinned version. One system, one codebase; the old links keep working. This is
-  the OrbitQube migration confirmed in D8 made concrete.
+- Each existing deck is imported as a versioned deck, and the old paths (for example
+  `/acme/decks`) are aliased so they resolve to the imported deck's pinned version. One
+  system, one codebase, and the links already in a client's inbox keep working.
 - **No client-facing downtime is a hard requirement.** The cutover is verified
   additively first: prove the new system serves every legacy URL identically in
   isolation (a `Host:` header smoke test before any route flip), tag a rollback point,
-  then cut over in a low-traffic window (night, Indian Standard Time, when clients are
-  not accessing the URLs), keeping the old system as an instant rollback. Rollback is a
-  single `docker compose down` on the new project; nothing shared is touched.
+  then cut over in a quiet window, keeping the old system as an instant rollback.
+  Rollback is a single `docker compose down` on the new project; nothing shared is
+  touched.
 
 ---
 
@@ -357,7 +330,7 @@ generation via the Claude Agent SDK on the user's Claude Code login per D9). Typ
 sufficient for every wave, with one honestly-flagged exception: per-recipient font cmap
 scrambling in the guard wave may want a small, isolated, CPU-capped Python (`fonttools`)
 helper, decided at Wave 3 after trying TypeScript first. Build proceeds in waves: Foundation,
-Studio, Guard, then migrate-and-soak.
+Studio, Guard, then migration.
 
 ---
 
@@ -405,15 +378,15 @@ client proposal pack, not just a slide deck:
 - the **interactive pricing tool**,
 - both **escape hatches** (image, figure) per D16.
 
-**Deferred to fast-follows:** the specialised document blocks that appear mainly in
-One client's internal engineering docs, not the client proposal path: ADR (architecture
-decision record), test-case/scenario, status-matrix, procedure, walkthrough-step,
-commercial-arithmetic, source-note, ranked-list, two-panel, horizon-roadmap, gallery,
-toc, known-gaps, audience-box.
+**Deferred to fast-follows:** the specialised blocks that belong to engineering
+documentation rather than to a proposal: ADR (architecture decision record),
+test-case/scenario, status-matrix, procedure, walkthrough-step, commercial-arithmetic,
+source-note, ranked-list, two-panel, horizon-roadmap, gallery, toc, known-gaps,
+audience-box.
 
-**Why:** D11 requires dogfooding on a real engagement before launch, and a real
-engagement is a mixed pack. The "structural six" was not enough to express even one.
-The Pack MVP is the true minimum that lets a full engagement be authored and migrated.
+**Why:** a real engagement is a mixed pack, not a slide deck on its own, and the
+"structural six" was not enough to express even one of them. The Pack MVP is the true
+minimum that lets a full engagement be authored.
 
 ---
 
@@ -521,90 +494,6 @@ and the alternative was a term that was unenforceable against self-hosters regar
 
 **Supersedes** the mandate reading. This restores and confirms D12: the mark is a configurable,
 removable default.
-
----
-
-## D20. Trademark is the protection mechanism, and it must be registered
-
-> **Status: registration deferred.** The project launches on unregistered
-> common-law marks and register later. The consequence to be aware of, not a reason to
-> reverse it: until the registrations exist, D19's protection rests entirely on passing off,
-> which Section 27(1) below makes a materially weaker instrument in India than infringement
-> of a registration. The exposure grows with adoption, because the mark becomes worth taking
-> at exactly the point we are least able to defend it.
-
-**Decision:** Register **DeckTrail** and **OrbitQube** as trademarks in India in **Class 9**
-(downloadable and self-hosted software) and **Class 42** (software as a service, plus software
-design and development). Government fee is ₹4,500 per class per mark when e-filing as an
-individual, startup, or small enterprise, so ₹9,000 per mark for both classes, excluding
-attorney fees. India has been a Madrid Protocol member since 8 July 2013, so an Indian
-registration can serve as the basic mark for later international extension. A US registration
-is $350 per class, filed electronically.
-
-**Why it is now load-bearing:** D19 moves all attribution protection onto trademark. An
-unregistered mark still has rights (India preserves passing off at Section 27(2) of the Trade
-Marks Act 1999), but Section 27(1) is blunt: "No person shall be entitled to institute any
-proceeding to prevent, or to recover damages for, the infringement of an **unregistered** trade
-mark." Unregistered means no infringement suit at all in India, only passing off, which
-requires proving goodwill, misrepresentation, and damage. That is a far heavier lift, and our
-goodwill in a brand-new name is near zero.
-
-**The trademark policy is not optional either.** *FreecycleSunnyvale v. Freecycle Network* is
-the warning: fail to exercise quality control over downstream use of your mark and you can lose
-it to naked licensing. An AGPL project whose name travels with every fork is structurally
-exposed, so `TRADEMARK.md` is part of the protection, not decoration.
-
-**Note:** open-source distribution does establish common-law trademark rights in the US.
-*Planetary Motion, Inc. v. Techsplosion, Inc.*, 261 F.3d 1188 (11th Cir. 2001): "The
-distribution of the Software for end-users over the Internet satisfies the 'use in commerce'
-jurisdictional predicate", and "the existence of sales or lack thereof does not by itself
-determine whether a user of a mark has established ownership rights therein." One circuit,
-2001, and it requires use "sufficiently public" to build recognition. A repo nobody installs
-earns nothing.
-
----
-
-## D22. DeckTrail moves under OrbitQube Technologies Private Limited
-
-**Decision:** DeckTrail's IP sits under **OrbitQube Technologies Private Limited**. `CLA.md`
-Section 1 names the company as the counterparty, and the partnership firm
-is not mentioned anywhere in the public repository: the sequencing this decision hoped for held,
-so the CLA is company-named before the repo is public and before anyone signs. The table below is
-retained as the reasoning, and because it is the record of what incorporation resolved.
-
-**Why this settles rather than defers the problem.** Checking the partnership firm as the CLA
-counterparty found three things drafting cannot fix, and incorporation fixes all three at once:
-
-| Problem | Partnership firm | Private limited |
-|---|---|---|
-| Suit on a contract while unregistered | **Barred**, Section 69(2), Indian Partnership Act 1932 | Not applicable |
-| Separate legal person | **No.** A firm is a compendious name for the partners (*Dulichand Laxminarayan v. CIT*, AIR 1956 SC 354) | Yes |
-| Perpetual succession | **No.** Dissolves on a partner's death or insolvency (s.42), or one partner's written notice (s.43) | Yes |
-| Partner liability | **Unlimited, joint and several** (s.25). No veil exists to pierce | Limited |
-
-The liability point is the sharpest one for this project specifically: open core deliberately
-strips the AGPL's warranty disclaimer on the paid side, and the partnership form removes the
-liability shield on that same side.
-
-**No migration to do.** Because the CLA names the company from the outset, no contribution is
-ever accepted under a firm-named CLA, so there is no chain of title to reassign to the company
-later, and nothing for diligence to question.
-
-**Also fixed while checking this, and independent of the entity:** the copyright grant now
-states its duration and territory expressly. Section 19(5) of the Copyright Act 1957 deems an
-assignment of unstated duration to be **five years**, s.19(6) presumes an unstated territory to
-be India only, s.19(4) deems unexercised rights lapsed after a year, and s.30A applies s.19 to
-licences. Whether s.30A reaches a gratuitous open-source licence is unsettled with no case law
-either way, so the grant says perpetual, worldwide, full term including renewals and
-reversions, and no-lapse, rather than relying on the answer. The moral rights clause is recast
-from waiver to consent, because s.57 rights subsist "even after the assignment" and a blanket
-waiver is widely regarded as unenforceable in India (*Amar Nath Sehgal v. Union of India*,
-Delhi HC, 2005).
-
-**Resolved:** OrbitQube Technologies Private Limited is incorporated (its Corporate Identity
-Number is recorded in `CLA.md`), so the earlier partnership-firm registration question is moot:
-the CLA counterparty is the company from the outset, and no contribution is ever accepted under a
-firm-named agreement.
 
 ---
 

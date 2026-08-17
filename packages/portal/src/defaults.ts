@@ -26,7 +26,7 @@ export const defaultTheme: Theme = {
 export const defaultBrandName = "DeckTrail";
 
 /**
- * Where someone asks permission to use the DeckTrail or OrbitQube names (D19, D20,
+ * Where someone asks permission to use the DeckTrail or OrbitQube names (D19,
  * TRADEMARK.md). This is not about the attribution mark: removing that needs no permission at
  * all. This is for naming a fork DeckTrail, using the logos, or offering a hosted service
  * under the name. The primary path opens a pre-filled request on the project's issue tracker,
