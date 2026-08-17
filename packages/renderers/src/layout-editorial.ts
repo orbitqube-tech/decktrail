@@ -85,19 +85,24 @@ table.st tfoot td{border-top:2px solid var(--heading);border-bottom:0;}
 
 /* Pull-figures: large serif numerals over a small letter-spaced label, the way a magazine sets a
    headline statistic. The hairline between figures does the work the card fill used to. */
+/* Track sizing is left to the shell on purpose. Widening it here to give the figure room pushed
+   a three stat row onto two lines, which looked worse than the problem it was solving. What was
+   actually too big was the figure, not the column. */
 .stats{gap:0;}
 /* min-width:0 because a grid item defaults to min-content width, so a long unbroken value
    pushes its own column wider than the track and out over its neighbour. */
-.stat{background:none;border-radius:0;padding:0 34px;min-width:0;}
+.stat{background:none;border-radius:0;padding:0 24px;min-width:0;}
 .stat:first-child{padding-left:0;}
 .stat + .stat{border-left:1px solid color-mix(in srgb,var(--muted) 24%,transparent);}
 /* Sized for a word, not only for a number. A stat value is usually short ("62%", "3x") and the
    first draft of this rule assumed it always was, at up to 96px before the theme scale. A deck
-   that puts a word there instead ("Attribute") then ran straight through its neighbour, because
-   nothing was wrapping and nothing was bounded by the column. The figure still reads as a pull
-   figure; it just cannot exceed its own cell any more. */
-.stat .v{font-weight:300;font-size:calc(clamp(34px,4.2vw,64px) * var(--scale));
- letter-spacing:-.02em;line-height:1.02;overflow-wrap:anywhere;hyphens:auto;max-width:100%;}
+   that puts a word there instead ("Attribute") ran straight through its neighbour. Merely
+   allowing it to wrap fixed the collision and looked worse: a nine letter word broken across two
+   lines mid syllable is not what a pull figure is for. So the figure is sized to fit a word of
+   that length on one line at this column width, and balance is there for the rare one that still
+   has to break, so it breaks evenly rather than leaving an orphan. */
+.stat .v{font-weight:300;font-size:calc(clamp(22px,2.4vw,38px) * var(--scale));
+ letter-spacing:-.02em;line-height:1.06;overflow-wrap:break-word;text-wrap:balance;max-width:100%;}
 .stat .k{text-transform:uppercase;letter-spacing:.12em;margin-top:14px;}
 
 .chart{max-width:64ch;}

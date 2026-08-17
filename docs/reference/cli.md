@@ -60,19 +60,24 @@ DeckTrail splits how a deck looks into two axes, and they compose.
 - **A theme is colour and type.** `--theme`.
 - **A layout is structure and treatment.** `--layout`.
 
-Naming neither gives you the deck you have always had. Naming both gives you the look those
-names were taken from. Mixing them is supported and is the point of keeping them apart: four
-layouts and three themes are twelve looks, not four fixed pairs.
+Naming neither gives you the deck you have always had. Naming both, with the same name on each,
+gives you the look that name was taken from. Mixing them is supported and is the point of keeping
+them apart: four layouts and four themes are sixteen combinations, not four fixed pairs.
 
 #### Themes
 
-Three ship, and naming no theme keeps the neutral default.
+Four ship, one per layout, and naming no theme keeps the neutral default.
 
 | Name | What it looks like |
 |---|---|
 | `crest` | Cool and high contrast. Navy against a muted red, on near white. |
 | `editorial` | Serif, on warm paper. Navy against rust. |
+| `storybook` | Warm and playful, on cream. Teal against gold. |
 | `vivid` | Warm and saturated, on cream. Blue and teal against pink and orange. |
+
+`storybook` and `vivid` share a ground and an ink, because both were drawn from the same warm
+family. They part company on the accents: storybook leads teal into gold, vivid leads blue into
+pink, and the gold appears in storybook alone.
 
 Without `--theme`, `render` uses `theme.json` in the working directory if one is there, and the
 neutral theme otherwise. When you pass `--theme`, a path that exists always wins over a name, so

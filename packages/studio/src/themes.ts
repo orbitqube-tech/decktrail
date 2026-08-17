@@ -67,6 +67,38 @@ const vivid: Theme = {
 };
 
 /**
+ * Warm and playful, on cream. Teal against gold.
+ *
+ * Shares a ground and an ink with `vivid`, because both were drawn from the same warm family,
+ * and then goes somewhere else with them: this one leads teal into gold, where vivid leads blue
+ * into pink. The gold is the tell. It exists in the source palette and vivid uses it nowhere,
+ * which is what makes these two distinct rather than one theme under two names.
+ */
+const storybook: Theme = {
+  name: "Storybook",
+  colors: {
+    bg: "#FFFCF5",
+    surfaceLow: "#FFFFFF",
+    surfaceHigh: "#FFFFFF",
+    accent: "#57BDB9",
+    accentDim: "#207AB4",
+    accent2: "#FBBB1B",
+    accent2Dim: "#FF8F00",
+    text: "#464646",
+    heading: "#1F2A37",
+    muted: "#7A7A7A",
+    good: "#2E7D5B",
+    warn: "#A9761A",
+    bad: "#A93B33",
+  },
+  typography: {
+    family: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
+    scale: 1.28,
+  },
+  logo: { src: "" },
+};
+
+/**
  * Serif, on warm paper. Navy against rust.
  *
  * The dim tones repeat their base colour rather than introducing a shade nobody chose. This
@@ -100,8 +132,9 @@ const editorial: Theme = {
 /** Every named theme, keyed by the name an author types. */
 export const themes: Readonly<Record<string, Theme>> = Object.freeze({
   crest,
-  vivid,
   editorial,
+  storybook,
+  vivid,
 });
 
 /** The names an author may pass, in a stable order, for help text and error messages. */

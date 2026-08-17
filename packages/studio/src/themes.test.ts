@@ -13,8 +13,15 @@ const deck = {
 };
 
 describe("themes that ship with DeckTrail", () => {
-  it("names three themes", () => {
-    expect(themeNames).toEqual(["crest", "editorial", "vivid"]);
+  it("names four themes, one per layout", () => {
+    expect(themeNames).toEqual(["crest", "editorial", "storybook", "vivid"]);
+  });
+
+  // storybook and vivid come from one warm family and must not collapse into the same theme.
+  it("keeps storybook and vivid distinct", () => {
+    expect(themes.storybook.colors).not.toEqual(themes.vivid.colors);
+    expect(themes.storybook.colors.accent).not.toBe(themes.vivid.colors.accent);
+    expect(themes.storybook.colors.accent2).not.toBe(themes.vivid.colors.accent2);
   });
 
   // The real guard. These palettes were transcribed by hand from stylesheets, and a mistyped
@@ -33,7 +40,7 @@ describe("themes that ship with DeckTrail", () => {
   });
 
   it("returns nothing for a name it does not ship, so the caller can try a path", () => {
-    expect(builtInTheme("storybook")).toBeUndefined();
+    expect(builtInTheme("brutalist")).toBeUndefined();
     expect(builtInTheme("./my-theme.json")).toBeUndefined();
     expect(builtInTheme("")).toBeUndefined();
   });
@@ -96,6 +103,6 @@ describe("resolving what --theme was given", () => {
   });
 
   it("says what the choices are when the argument is neither a path nor a name", () => {
-    expect(() => resolveTheme("stroybook", io({}))).toThrow(/crest, editorial, vivid/);
+    expect(() => resolveTheme("stroybook", io({}))).toThrow(/crest, editorial, storybook, vivid/);
   });
 });
