@@ -119,6 +119,53 @@ export function magicLinkMessage(url: string, opts: MessageOptions): { subject: 
   return { subject, text, html };
 }
 
+/** The outcome of a test SMTP send. Never carries the password: only ok, or the server's own error text. */
+export interface SmtpTestResult {
+  ok: boolean;
+  error?: string;
+}
+
+/**
+ * How long a test send waits for a TCP connection, the SMTP greeting, and the rest of the
+ * conversation before giving up. Short on purpose: this runs from the first-run setup page,
+ * an operator is watching it, and an unreachable host should fail in seconds, not minutes.
+ */
+const TEST_CONNECTION_TIMEOUT_MS = 8_000;
+
+/**
+ * Attempt a real SMTP send with settings taken directly from the setup wizard's in-progress
+ * form, not from the settings store, because at first run nothing is saved there yet. This
+ * is the only place ad hoc, unsaved SMTP settings are used to send anything.
+ *
+ * This never falls back to logging the way `buildMagicLinkSender` does when SMTP is
+ * unconfigured: a broken configuration must come back as a failure, or the test would
+ * certify a broken setup as working, which is worse than not testing it at all.
+ */
+export async function sendTestMessage(smtp: SmtpSettings, to: string): Promise<SmtpTestResult> {
+  const transport = createTransport({
+    host: smtp.host,
+    port: smtp.port,
+    secure: smtp.secure,
+    auth: smtp.user ? { user: smtp.user, pass: smtp.pass } : undefined,
+    connectionTimeout: TEST_CONNECTION_TIMEOUT_MS,
+    greetingTimeout: TEST_CONNECTION_TIMEOUT_MS,
+    socketTimeout: TEST_CONNECTION_TIMEOUT_MS,
+  });
+  try {
+    await transport.sendMail({
+      from: smtp.from,
+      to,
+      subject: "DeckTrail test message",
+      text: "This is a test message from DeckTrail setup. If it arrived, these SMTP settings work.",
+    });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  } finally {
+    transport.close();
+  }
+}
+
 /**
  * Make an SMTP-backed sender. nodemailer speaks the SMTP wire protocol to the configured
  * host using our own credentials; pointing host at a provider's SMTP endpoint (a mail

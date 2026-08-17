@@ -9,6 +9,7 @@ import { createSession, readSession } from "./auth/session.js";
 import { constantTimeEqual } from "./crypto.js";
 import { serializeSessionCookie, parseCookies } from "./cookies.js";
 import { isSetupComplete, setupFormHtml, setupLockedHtml, setupTokenValid, SETUP_TOKEN_KEY, type SettingsStore } from "./settings.js";
+import { resolveSmtp, sendTestMessage } from "./mailer.js";
 import type { RateLimiter } from "./ratelimit.js";
 import type { TurnstileVerifier } from "./turnstile.js";
 import type { ResolvedContent } from "./content.js";
@@ -217,6 +218,32 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       complete = true;
       if (deps.onSetupComplete) await deps.onSetupComplete(adminEmail);
       return reply.code(201).send({ ok: true });
+    });
+
+    // Send a real test message using the SMTP values currently typed into the form, not
+    // whatever (if anything) is already saved: at first run nothing is saved yet, so testing
+    // the saved values would test nothing. This genuinely opens an SMTP connection with the
+    // supplied settings; it never falls back to logging the way the real sender does when
+    // SMTP is unconfigured, because a fallback here would report a broken configuration as
+    // working. type="button" on the form, not type="submit": the release gate's end-to-end
+    // script clicks button[type="submit"] expecting the single "Finish setup" button, and a
+    // second submit button would make that selector ambiguous.
+    app.post("/setup/test-smtp", async (request, reply) => {
+      if (await isSetupComplete(settings)) return reply.code(409).send({ error: "already set up" });
+      const body = (request.body ?? {}) as Record<string, string>;
+      if (!(await setupTokenValid(settings, body["setupToken"]))) {
+        return reply.code(403).send({ error: "invalid or missing setup token" });
+      }
+      const smtp = resolveSmtp((k) => body[k] || undefined);
+      if (!smtp) {
+        return reply.code(400).send({ ok: false, error: "SMTP host is required to send a test message" });
+      }
+      const to = (body["adminEmail"] ?? "").trim();
+      if (!to) {
+        return reply.code(400).send({ ok: false, error: "admin email is required as the test recipient" });
+      }
+      const result = await sendTestMessage(smtp, to);
+      return reply.code(result.ok ? 200 : 502).send(result);
     });
   }
 

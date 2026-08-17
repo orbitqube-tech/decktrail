@@ -104,7 +104,11 @@ h1{font-weight:800;letter-spacing:-1px}
 label{display:block;margin:14px 0 4px;color:#aaa;font-size:14px}
 input{width:100%;padding:10px;border-radius:8px;border:1px solid #333;background:#1a1a1a;color:#eee}
 button{margin-top:22px;padding:12px 20px;border:none;border-radius:10px;background:linear-gradient(45deg,#7aa2ff,#b98cff);color:#0e0e0e;font-weight:700;cursor:pointer}
+button.secondary{background:#1a1a1a;color:#eee;border:1px solid #333;font-weight:600;margin-top:12px}
 small{color:#888;display:block;margin-top:4px;line-height:1.5}
+p.smtp-result{margin-top:10px;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5;display:none}
+p.smtp-result.ok{display:block;background:#123a1f;color:#8fe3a8}
+p.smtp-result.fail{display:block;background:#3a1212;color:#e38f8f}
 label.chk{display:flex;align-items:center;gap:8px;margin-top:18px;color:#ccc}
 label.chk input{width:auto}
 p.note{margin-top:18px;padding:12px 14px;border-radius:8px;background:#161616;color:#999;font-size:13px;line-height:1.6}
@@ -122,6 +126,8 @@ p.note a{color:#7aa2ff}
 <label>SMTP user (optional)</label><input name="smtp_user">
 <label>SMTP password (optional)</label><input name="smtp_pass" type="password">
 <label>From address (optional)</label><input name="smtp_from">
+<button type="button" class="secondary" id="testSmtp">Send a test message</button>
+<p class="smtp-result" id="smtpResult"></p>
 <label class="chk"><input type="checkbox" name="telemetry_optin" value="true"> Share anonymous usage to help improve DeckTrail</label>
 <small>Off by default. Sends only an anonymous id, the version, and rough counts. Never your content, your clients, or your viewers. Change it any time.</small>
 <p class="note">Your decks carry a small "Made with DeckTrail by OrbitQube" mark. The licence does not require it and you can turn it off without asking us. We do ask you to keep it: it is the only way anyone finds this project. See <a href="https://decktrail.com/attribution" target="_blank" rel="noopener">why we ask</a>.</p>
@@ -134,6 +140,35 @@ document.getElementById('setup').addEventListener('submit',function(e){
  d.setupToken=${JSON.stringify(token)};
  fetch('/setup',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(d)})
   .then(function(r){if(r.ok){location.href='/'}else{r.json().then(function(j){alert(j.error||'setup failed')})}});
+});
+document.getElementById('testSmtp').addEventListener('click',function(){
+ var btn=document.getElementById('testSmtp');
+ var out=document.getElementById('smtpResult');
+ out.className='smtp-result';
+ out.textContent='';
+ var d={};new FormData(document.getElementById('setup')).forEach(function(v,k){if(v)d[k]=v});
+ d.setupToken=${JSON.stringify(token)};
+ btn.disabled=true;
+ btn.textContent='Sending...';
+ fetch('/setup/test-smtp',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(d)})
+  .then(function(r){return r.json().then(function(j){return {status:r.status,body:j}})})
+  .then(function(res){
+   btn.disabled=false;
+   btn.textContent='Send a test message';
+   if(res.status===200&&res.body.ok){
+    out.className='smtp-result ok';
+    out.textContent='Test message sent. Check the admin inbox.';
+   }else{
+    out.className='smtp-result fail';
+    out.textContent='Test message failed: '+(res.body.error||'unknown error');
+   }
+  })
+  .catch(function(err){
+   btn.disabled=false;
+   btn.textContent='Send a test message';
+   out.className='smtp-result fail';
+   out.textContent='Test message failed: '+err.message;
+  });
 });
 </script>
 </body>
