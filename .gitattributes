@@ -5,6 +5,7 @@
 # checked in from a Windows machine, so neither can be left to whatever the working copy happens to
 # have.
 *.sh   text eol=lf
+*.command text eol=lf
 *.mjs  text eol=lf
 *.bat  text eol=crlf
 *.ps1  text eol=crlf

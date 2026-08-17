@@ -1,0 +1,133 @@
+# .graphifyignore  --  copy to the ROOT of every folder graphify is pointed at
+#
+# graphify 0.9.32 has NO --exclude flag. Exclusion is .gitignore (respected
+# automatically) plus this file. Folders that are not git repos get NO
+# automatic filtering at all, so this file is mandatory for:
+#   oq-workspace, anvaya living, myra-ebooks, bdj, civicos
+#
+# Deploy with:  .\deploy-graphifyignore.ps1
+
+# ---------------------------------------------------------------------------
+# CREDENTIALS  --  hard exclude, never read, never sent to claude-cli
+# Decision: hard-exclude at inventory, not redact-after-parse.
+# ---------------------------------------------------------------------------
+*credential*
+*credentials*
+test_credentials.md
+.env
+.env.*
+*.env
+*secret*
+*token*
+*password*
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+.netrc
+*apikey*
+*api_key*
+auth.json
+.claude.json
+
+# ---------------------------------------------------------------------------
+# BINARY DOCUMENTS  --  decision: markdown only, skip docx/pdf/pptx
+# Applies to the Drive course material: 441 docx, 217 pdf, 185 pptx skipped,
+# 383 .md kept. Remove these 6 lines if you later want full coverage.
+# ---------------------------------------------------------------------------
+*.docx
+*.doc
+*.pdf
+*.pptx
+*.ppt
+*.xlsx
+
+# ---------------------------------------------------------------------------
+# BUILD OUTPUT AND VENDORED CODE
+# ---------------------------------------------------------------------------
+node_modules/
+venv/
+.venv/
+env/
+__pycache__/
+*.egg-info/
+site-packages/
+target/
+dist/
+build/
+.next/
+out/
+coverage/
+.pytest_cache/
+.gradle/
+vendor/
+bower_components/
+
+# ---------------------------------------------------------------------------
+# VCS AND EDITOR
+# ---------------------------------------------------------------------------
+.git/
+.svn/
+.idea/
+.vscode/
+*.swp
+
+# ---------------------------------------------------------------------------
+# CLAUDE CODE NOISE
+# 15 near-identical copies of changelog.md, ~6 MB, zero knowledge value.
+# Session transcripts are 3,217 files / 2,019 MB - excluded by decision,
+# the distilled plans\ and memory\ files carry the same signal.
+#
+# worktrees/  --  agent worktree scratch. MEASURED 2026-08-02: paperclip-ai
+# alone had 6,342 md files under .claude\worktrees\, 63% of the ENTIRE 10,041
+# file pass-2 corpus. Same class as session transcripts: throwaway working
+# copies whose durable signal already lives in plans\ and memory\. Excluding
+# it cut pass 2 from ~15.9M to ~6M input tokens.
+# ---------------------------------------------------------------------------
+worktrees/
+cache/
+telemetry/
+shell-snapshots/
+session-env/
+file-history/
+paste-cache/
+downloads/
+backups/
+changelog.md
+history.jsonl
+*.jsonl
+
+# ---------------------------------------------------------------------------
+# GRAPHIFY'S OWN OUTPUT  --  prevents recursive self-ingestion
+# ---------------------------------------------------------------------------
+graphify-out/
+.graphify_analysis.json
+.graphify_labels.json
+
+# ---------------------------------------------------------------------------
+# MEDIA
+#
+# IMAGES: graphify classifies these as "images" and sends them through the
+# VISION path, which is by far the most expensive tokens-per-unit-of-knowledge
+# in this corpus. MEASURED 2026-08-02: myra-ebooks has 2 md + 46 png and cost
+# 485,594 input tokens, ~19x the ~12,800 in/file rate every text-only folder
+# ran at. It yielded 80 nodes.
+#
+# Same call as the binary-document decision above: this is a TEXT knowledge
+# graph. Remove these lines if you later want diagrams and screenshots in the
+# graph, and expect the cost to scale with image count, not file count.
+# ---------------------------------------------------------------------------
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.bmp
+*.svg
+*.mp4
+*.mov
+*.zip
+*.7z
+*.tar.gz
+*.iso

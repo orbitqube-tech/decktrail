@@ -61,3 +61,11 @@ examples/*.html
 # The launcher scripts/up.sh writes, so the CLI runs without a global install.
 /decktrail
 /decktrail.cmd
+
+# The knowledge graph is generated from this repository on every run, so the repository is
+# its source and it is never the other way round. Tracking any of it would re-dirty the tree
+# the moment the tool ran again. Its own ignore file, .graphifyignore, keeps it from reading
+# this directory back in on a later pass.
+graphify-out/
+.graphify_analysis.json
+.graphify_labels.json
