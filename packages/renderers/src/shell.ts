@@ -37,14 +37,14 @@ h1{font-size:calc(clamp(30px,5.2vw,58px) * var(--scale));line-height:1.07;color:
 h2{font-size:calc(clamp(22px,3.2vw,38px) * var(--scale));line-height:1.12;color:var(--heading);font-weight:800;letter-spacing:-.8px;margin-bottom:calc(22px * var(--scale))}
 h3{font-size:calc(clamp(15px,1.5vw,19px) * var(--scale));color:var(--heading);font-weight:700}
 .grad{background:linear-gradient(45deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
-p{font-size:calc(clamp(15px,1.5vw,19px) * var(--scale));line-height:1.6;color:var(--text);max-width:66ch}
-.lede{font-size:calc(clamp(17px,1.85vw,22px) * var(--scale));line-height:1.6;color:var(--heading);max-width:66ch;margin-bottom:calc(16px * var(--scale))}
-.sub{font-size:calc(clamp(16px,1.8vw,22px) * var(--scale));line-height:1.6;color:var(--muted);max-width:62ch;margin-top:calc(14px * var(--scale))}
+p{font-size:calc(clamp(17px,1.7vw,22px) * var(--scale));line-height:1.6;color:var(--text);max-width:66ch}
+.lede{font-size:calc(clamp(19.5px,2.1vw,25px) * var(--scale));line-height:1.6;color:var(--heading);max-width:66ch;margin-bottom:calc(16px * var(--scale))}
+.sub{font-size:calc(clamp(18px,2vw,25px) * var(--scale));line-height:1.6;color:var(--muted);max-width:62ch;margin-top:calc(14px * var(--scale))}
 ul.points{list-style:none;margin-top:6px}
 /* The measure lives on the li, not the ul. A ch unit resolves against the element's own
    font-size, and the ul inherits the body's, so a max-width here sized the box for 68
    characters of 16px text and then filled it with 20px text: about 47 fitted, against 76. */
-ul.points li{position:relative;padding-left:24px;margin:11px 0;color:var(--text);font-size:calc(clamp(13px,1.4vw,17px) * var(--scale));line-height:1.5;max-width:76ch}
+ul.points li{position:relative;padding-left:24px;margin:11px 0;color:var(--text);font-size:calc(clamp(15px,1.6vw,19.5px) * var(--scale));line-height:1.5;max-width:76ch}
 ul.points li::before{content:"";position:absolute;left:0;top:.62em;width:8px;height:8px;border-radius:50%;background:linear-gradient(45deg,var(--accent),var(--accent2));box-shadow:0 0 10px color-mix(in srgb,var(--accent) 50%,transparent)}
 .grid{display:grid;gap:calc(12px * var(--scale));margin-top:calc(8px * var(--scale))}
 .grid.c2{grid-template-columns:repeat(2,1fr)}
@@ -57,11 +57,11 @@ ul.points li::before{content:"";position:absolute;left:0;top:.62em;width:8px;hei
 .card .ico{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;margin-bottom:12px;
  background:linear-gradient(45deg,color-mix(in srgb,var(--accent) 18%,transparent),color-mix(in srgb,var(--accent2) 18%,transparent));
  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 16%,transparent)}
-.card h3{color:var(--heading);font-size:calc(clamp(13px,1.35vw,16px) * var(--scale));font-weight:700;margin-bottom:6px;line-height:1.25}
-.card p{color:var(--muted);font-size:calc(clamp(11px,1.1vw,13px) * var(--scale));line-height:1.4;max-width:none}
+.card h3{color:var(--heading);font-size:calc(clamp(15px,1.55vw,18.5px) * var(--scale));font-weight:700;margin-bottom:6px;line-height:1.25}
+.card p{color:var(--muted);font-size:calc(clamp(13px,1.25vw,15px) * var(--scale));line-height:1.4;max-width:none}
 .card .tag{display:inline-block;margin-bottom:8px;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);font-weight:700;
  padding:2px 8px;border-radius:20px;background:color-mix(in srgb,var(--accent) 14%,transparent)}
-.card ul{margin-top:6px;padding-left:16px;color:var(--muted);font-size:calc(clamp(11px,1.1vw,13px) * var(--scale));line-height:1.4}
+.card ul{margin-top:6px;padding-left:16px;color:var(--muted);font-size:calc(clamp(13px,1.25vw,15px) * var(--scale));line-height:1.4}
 .card ul li{margin:4px 0}
 table.st{width:100%;border-collapse:collapse;margin-top:8px;font-size:calc(15px * var(--scale))}
 table.st th{text-align:left;color:var(--accent);font-weight:700;padding:10px 12px;border-bottom:1px solid color-mix(in srgb,var(--accent) 24%,transparent)}
@@ -85,8 +85,8 @@ table.st tfoot td{font-weight:800;color:var(--heading)}
 .fstep .tag.t2{color:var(--accent2);background:color-mix(in srgb,var(--accent2) 14%,transparent)}
 .fstep .tag.t3{color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent)}
 .fstep .tag.t4{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
-.fstep h3{color:var(--heading);font-size:calc(clamp(13px,1.3vw,16px) * var(--scale));font-weight:700;margin-bottom:5px;line-height:1.25}
-.fstep p{font-size:calc(clamp(11px,1.1vw,13.5px) * var(--scale));color:var(--muted);line-height:1.4;max-width:none}
+.fstep h3{color:var(--heading);font-size:calc(clamp(15px,1.5vw,18.5px) * var(--scale));font-weight:700;margin-bottom:5px;line-height:1.25}
+.fstep p{font-size:calc(clamp(13px,1.25vw,15.5px) * var(--scale));color:var(--muted);line-height:1.4;max-width:none}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:calc(18px * var(--scale));margin-top:calc(10px * var(--scale))}
 .stat{background:var(--s-high);border-radius:14px;padding:calc(22px * var(--scale))}
