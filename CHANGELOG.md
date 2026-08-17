@@ -9,6 +9,82 @@ come back to. Before 1.0 the minor number carries features and the patch number 
 
 Dates are the day the tag was pushed.
 
+## 0.3.0 (2026-08-17)
+
+The release that lets an owner act on a share and see what a viewer actually did to a protected
+deck, not just that it loaded.
+
+### Sending and tracking a deck
+
+- **Withdraw a share.** `decktrail revoke <shareId>`, and the same action from `DELETE
+  /admin/shares/:id`. It does not just stop the link from resolving: it ends the session the
+  recipient already holds, so someone reading a deck when you revoke it is signed out, not left
+  to finish. Revoking twice, or revoking a share that never existed, is not an error.
+- **The dashboard shows what a viewer did against the copy protection.** Copy, print and download
+  attempts, and tripwires broken down by reason, all reached the database before this release and
+  went nowhere. They have their own panel now, separate from bot traffic refused at the door,
+  which looked similar enough at a glance to hide behind it.
+- **A selection tripwire.** It fires only once a selection exists, which on a protected deck means
+  the stylesheet that prevents selection has already been defeated, so it is evidence of that,
+  not a record of an ordinary drag across the page.
+- **The dashboard shows where the reading went**: time per slide and how far each person got,
+  summarised from data the beacon was already sending. Dwell is capped per view so a deck left
+  open in a browser tab over a weekend cannot report as one sixty-hour reading, and the per-slide
+  figure is a median so one abandoned tab cannot move a number you're meant to trust.
+- **A forwarded link now leaves a trace.** A signed-in person opening a share that was not sent to
+  them was always refused; it is now recorded and shown, not only reachable in the exported log.
+- **The `devtools_open` event type is gone.** It was reserved and never emitted, and the
+  documentation described it as deferred. It is not deferred, it is impossible: measured against a
+  real browser, the technique fires zero times with the developer console open, because the console
+  does not evaluate a getter while drawing a preview. A signal that cannot be observed is not a
+  weaker signal, it is not a signal. `docs/DECISIONS.md` D33 carries the measurement.
+- **A share link now uses the scheme the portal is actually reached on.** It hardcoded `https`,
+  so a portal running on plain `http` handed out a share link that did not load, even though its
+  own sign-in link was correct.
+
+### Writing a deck
+
+- **A fourth theme, storybook**, alongside crest, editorial and vivid. All four are palette and
+  type only, so any of them restyles a deck without moving anything on it.
+- **Four layouts to choose from**, `--layout crest`, `editorial`, `storybook` or `vivid`. A layout
+  is CSS placed over the existing shell: it changes no markup and no behaviour, so navigation, the
+  jump menu, the progress bar, the watermark and the beacon keep working under any of them.
+  Naming none renders the same default as before.
+- **Body text reads better.** Paragraphs, list items and card text are roughly fifteen percent
+  larger; headings are unchanged, because they were never the part that was hard to read on a
+  laptop.
+
+### Getting started
+
+- **The setup wizard can send a test message** using the SMTP host, port, user, password and from
+  address currently typed into the form, before any of it is saved. It reports the mail server's
+  real error rather than falling back to logging the way the ordinary sender does, so a test that
+  passes actually means the setting works.
+- **The installers ask for the right Node.** They said 22 or newer while the project has required
+  24 or newer since the last release; installing exactly what was asked for still failed. The CLI's
+  list of themes and layouts is generated from the same source that ships them now, so it cannot
+  fall behind again the way it did when a fourth theme shipped.
+- **The double-click launchers find the right directory.** Explorer and Finder can start a
+  double-clicked file somewhere other than the folder it sits in; both launchers now anchor
+  themselves first. Neither launcher names a port any more, since `.env` is the port's one home.
+
+### Under it
+
+- `packages/ingest` moves to `@orbitqube/oq-ai-ocr` 0.1.3, off a high severity advisory for
+  arbitrary JavaScript execution on a malicious PDF, fixed at the source so every consumer of the
+  shared library gets it. Two development-only advisories are pinned forward in the same pass, so
+  `pnpm audit` now reports nothing outstanding at all.
+- The owner console has a rendering test harness: real components in a real DOM, asserted on the
+  text a person reads, in the one surface that has already shipped a panel nobody could see.
+- The commit-msg hook `CONTRIBUTING.md` already described now ships in the repository. It is
+  inert until a contributor opts in, and safe to enable on a fork.
+
+### Fixed
+
+- A stat value sized as a magazine pull figure could overlap its neighbour at normal deck widths;
+  it is now bounded to the column that holds it and allowed to break onto a second line for a
+  long word.
+
 ## 0.2.0 (2026-07-25)
 
 The release that made DeckTrail reachable: the install stopped being a checklist, and the model that
