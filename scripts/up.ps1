@@ -71,7 +71,7 @@ elseif (Get-Command corepack -ErrorAction SilentlyContinue) {
   if (Get-Command pnpm -ErrorAction SilentlyContinue) { $pnpm = 'pnpm' }
 }
 if (-not $pnpm) {
-  Die "Node with pnpm is needed to build the command line tool. Install Node 22 or newer, then run: corepack enable pnpm"
+  Die "Node with pnpm is needed to build the command line tool. Install Node 24 or newer, then run: corepack enable pnpm"
 }
 Say "pnpm is available"
 

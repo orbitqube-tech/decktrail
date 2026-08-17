@@ -4,7 +4,7 @@ import { Theme } from "@decktrail/ir";
 import { generateDeck, createProvider, PROVIDER_IDS } from "@decktrail/generate";
 import { extract as extractDocument, type Extracted } from "@decktrail/ingest";
 import { runValidate, runRender } from "./commands.js";
-import { resolveTheme } from "./themes.js";
+import { resolveTheme, themeNames } from "./themes.js";
 import { isLayoutName, layoutNames } from "@decktrail/renderers";
 import { publishAndShare, fetchVoice } from "./push.js";
 import { fetchBrand } from "./brand.js";
@@ -22,10 +22,10 @@ function usage(): never {
                                      label or --confidential replaces its text. The brand
                                      comes from --theme, else theme.json here, else a
                                      neutral default. --theme takes a path or one of the
-                                     themes that ship with DeckTrail: crest, editorial,
-                                     vivid. A theme sets colour and type.
-                                     --layout sets the structure a deck wears: crest,
-                                     editorial, storybook, vivid. Decks only, and the two
+                                     themes that ship with DeckTrail: ${themeNames.join(", ")}.
+                                     A theme sets colour and type.
+                                     --layout sets the structure a deck wears:
+                                     ${layoutNames.join(", ")}. Decks only, and the two
                                      compose, so any layout works under any theme.
   extract <file> [--out <file.md>] [--ocr auto|never|force] [--ocr-lang <code>]
                  [--ocr-tier auto|tiny|small|medium|server] [--ocr-model-path <dir>]

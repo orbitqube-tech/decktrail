@@ -49,7 +49,7 @@ if command -v pnpm >/dev/null 2>&1; then
 elif command -v corepack >/dev/null 2>&1 && corepack enable pnpm >/dev/null 2>&1 && command -v pnpm >/dev/null 2>&1; then
   PNPM="pnpm"
 fi
-[ -n "$PNPM" ] || die "Node with pnpm is needed to build the command line tool. Install Node 22 or newer, then run: corepack enable pnpm"
+[ -n "$PNPM" ] || die "Node with pnpm is needed to build the command line tool. Install Node 24 or newer, then run: corepack enable pnpm"
 say "pnpm is available"
 
 # ---------------------------------------------------------------- the port
