@@ -20,7 +20,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@orbitqube/oq-ai-ocr": "^0.1.2"
+    "@orbitqube/oq-ai-ocr": "^0.1.3"
   },
   "devDependencies": {
     "@types/node": "^26.1.1"

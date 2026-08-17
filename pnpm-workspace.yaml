@@ -19,6 +19,15 @@ overrides:
   # Reached only through @fastify/static's own glob and minimatch. 5.0.7 expands braces without
   # bound, so a crafted pattern exhausts memory. 5.0.9 is a patch on the same major.
   brace-expansion: "^5.0.9"
+  # Both of the next two are reached only beneath vite, itself a development dependency of the
+  # console and of vitest, so neither ships to a user. They are pinned forward anyway rather than
+  # written off: an advisory left open because it is "only development" still has to be re-reasoned
+  # by every person who runs the audit, and the whole point of this file is that nobody has to.
+  # 3.3.16 loops forever when a custom generator is given a size of zero (GHSA-mwcw-c2x4-8c55).
+  nanoid: "^3.3.18"
+  # 8.5.19 reads an arbitrary .map file from an attacker-controlled sourceMappingURL when `from`
+  # is unset (GHSA-fxqj-rqcc-2cmp). Both are patches on the same major, so pinning is safe.
+  postcss: "^8.5.23"
 allowBuilds:
   esbuild: true
   # The optional recognition engine. Its install script exists to download the GPU execution
