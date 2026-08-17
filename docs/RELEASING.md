@@ -51,7 +51,7 @@ Then:
 
    | Remote | Role | Where |
    |---|---|---|
-   | `gitlab` | **Canonical.** Work happens here. | `gitlab.com/orbitqube/solutions/decktrail` |
+   | `gitlab` | **Canonical.** Work happens here. | `gitlab.com/orbitqube/solutions/decktrail/decktrail` |
    | `origin` | **Public mirror.** Never branch, merge or commit against it. | `github.com/orbitqube-tech/decktrail` |
 
    ```sh
