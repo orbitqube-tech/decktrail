@@ -1,12 +1,7 @@
 # CLAUDE.md
 
-Notes for an AI assistant working on DeckTrail, and for anyone who finds them useful.
-
-> **Maintainer:** your full working instructions, the resume path, and the pre-public review
-> are in the companion repository, not here. Read `CLAUDE-decktrail-maintainer.md` there first.
-> This file is the public one, and it deliberately holds nothing that is not everybody's.
-
----
+Notes for anyone working on DeckTrail, human or otherwise. Read `README.md` first, then
+`docs/README.md`, which indexes everything else.
 
 ## What this is
 
@@ -17,25 +12,15 @@ The bet: a client who receives your deck can paste it into a language model and 
 thinking. Nothing stops that. So DeckTrail is built for what is left, which is knowing whose
 copy it was.
 
-Read `README.md` first, then `docs/README.md`, which indexes everything else.
-
 ## The rules that matter here
 
 **1. Never claim prevention.** DeckTrail claims deterrence, attribution, and detection. It does
 not stop a camera, a screenshot, or a retype, and it never says it does. `docs/THREAT-MODEL.md`
 is the conscience of the project: if a line of code, a document, or a piece of copy disagrees
-with it, the threat model wins.
-
-The threat model was itself rewritten once because it had claimed controls that did not exist.
-**The rule applies to us before it applies to anyone else.** Before you describe a capability,
-check it exists.
+with it, the threat model wins. The rule applies to the project before it applies to anyone
+else, so before you describe a capability, check it exists.
 
 **2. Run it. Do not trust the tests.**
-
-The suite has been green while: any signed-in address could read any deck by URL; the README's
-own install instructions handed out a published admin token; a client clicking their link got
-raw JSON with nowhere to sign in; and the console's Voice tab wrote to a row nothing read. All
-of it was found by using the product, none by testing it.
 
 ```sh
 ./scripts/up.sh               # the whole install, as a stranger gets it
@@ -43,38 +28,30 @@ of it was found by using the product, none by testing it.
 ./scripts/test-integration.sh # the database tests that otherwise skip themselves
 ```
 
-The last two are release gates. A test that stubs the thing it is testing proves nothing, and this
-repository has shipped several.
+The last two are release gates. A test that stubs the thing it is testing proves nothing, and a
+green suite is not evidence that a person can install this, sign in, and read a deck. The first
+command is there because the install is a feature and breaks like one: a pinned port, a missing
+executable bit, a busy-port check that misreads its own stack. None of that is visible from
+reading the code and no test covers any of it.
 
-The first one is there because the install is a feature and breaks like one. Running it found a
-port that was pinned in the compose file while `.env.example` advertised it as a setting, shell
-scripts committed without the executable bit so the documented commands failed on a fresh clone
-anywhere but Windows, and a script that called a port busy when its own stack was holding it. None
-of that was visible from reading, and no test covers any of it.
+**3. Write everything here for a stranger.** Every file in this repository is read by someone who
+cloned DeckTrail and knows nothing about how it got this way. Two consequences:
 
-**3. This repository is public. Write everything in it for a stranger.**
-
-Every file here is read by someone who cloned DeckTrail and knows nothing about how it got this
-way. Two consequences, and both are absolute:
-
-- **Nothing private lives here.** No client name, no client content, no internal review, no
-  commercial material. Those go in the companion repository. `acme-logistics` is the fixture
-  client. Run `git grep -i` for the real ones before every commit; they have come back three
-  times, hours after a scrub, because the task at hand made them the nearest example to reach for.
+- **Nothing private lives here.** No client name, no client content, no commercial material.
+  `acme-logistics` is the fixture client, and every figure in a shipped example is invented.
 - **The documentation describes the product, not its history.** It is written for the person
   using DeckTrail: what it does, how to run it, what it will not do. Never "this used to", never
-  "we changed", never a reference to a review or a decision that a reader cannot see. Every
-  document reads as though the current version is the only version there has ever been. The
-  reasoning behind a reversal belongs in `docs/DECISIONS.md`, which exists for exactly that and
-  is the one place a reader is told why.
+  "we changed". Every document reads as though the current version is the only version there has
+  ever been. The reasoning behind a reversal belongs in `docs/DECISIONS.md`, which exists for
+  exactly that and is the one place a reader is told why.
 
-Keep what is useful and keep it true. A stale document is worse than a missing one: the missing
-one sends the reader to the code, and the stale one sends them somewhere wrong with confidence.
-When behaviour changes, the document changes in the same commit or the change is not finished.
+A stale document is worse than a missing one: the missing one sends the reader to the code, and
+the stale one sends them somewhere wrong with confidence. When behaviour changes, the document
+changes in the same commit or the change is not finished.
 
-**4. Do not guess a value you cannot see.** Four separate bugs came from one habit: code that
-could not see the workspace defaulted it to `"default"`, while publish read it from the IR.
-Every guess was silent and every one was wrong. If you do not know, fail, ask, or derive it.
+**4. Do not guess a value you cannot see.** Code that cannot see the workspace must not default
+it, because publish reads it from the intermediate representation and a silent guess is wrong
+every time. If you do not know, fail, ask, or derive it.
 
 **5. No em dashes,** anywhere: code, docs, commit messages. En dashes for numeric ranges only.
 The renderers' tests are the one exception, because a test asserting the output contains no em
@@ -82,16 +59,18 @@ dash has to name the character it is looking for. Do not "fix" those.
 
 **6. Explain every acronym on first use.** See `docs/GLOSSARY.md`.
 
-**7. No hardcoded values.** One authoritative home per setting. This project exists because the
-prior art hardcoded a brand.
+**7. No hardcoded values.** One authoritative home per setting.
 
 **8. Commits carry no AI attribution.** A `commit-msg` hook in `.githooks/` enforces it, and the
 hook is in the repository so a fresh clone actually has it. Git ignores the directory until you
 run `git config core.hooksPath .githooks`, so it is inert until you opt in, and its author check
 stays off unless you set `decktrail.expectedAuthor`. That makes it safe on a fork; see
-`CONTRIBUTING.md`. It was untracked for a long time while both files claimed otherwise, which is
-the shape to watch for: `core.hooksPath` pointing at a missing directory runs no hook and reports
-no error, so the documentation was the only thing that knew, and it was wrong.
+`CONTRIBUTING.md`. Note that `core.hooksPath` pointing at a directory that is not there runs no
+hook and reports no error, so confirm the hook fires rather than assuming it.
+
+**9. Commit messages are public too.** One logical change per commit, an imperative subject, and
+a body that says what changed, why, and how it was verified. Write it for a stranger reading the
+log, on the same terms as rule 3.
 
 ## Layout
 
@@ -118,28 +97,26 @@ entry is hard to write because nothing user-visible changed, there is no release
 
 ## Where the sharp edges are
 
-- **`packages/portal/src/content.ts`** decides who may read a deck. It had no test and shipped
-  without checking the recipient. Treat it accordingly.
+- **`packages/portal/src/content.ts`** decides who may read a deck. Any change to it needs a test
+  that proves a signed-in person who is not the recipient is refused.
 - **`packages/portal/src/config.ts`** refuses to boot on any secret placeholder this repository
-  has ever published. That is not paranoia; it happened.
+  has ever published. Keep the list growing rather than trimming it.
 - **`packages/renderers/src/sanitize.ts`** is an allowlist, on purpose. Widen it deliberately or
   not at all.
-- **The in-memory fakes must match the real stores.** They diverged once, and the tests passed
-  against the permissive one while production silently did nothing.
+- **The in-memory fakes must match the real stores.** A permissive fake makes the suite green
+  over a production path that does nothing, so a behaviour proven only against a fake is not
+  proven.
 - **The installer must never write a secret it could instead let the portal mint.** It generates
-  the database password, which has nowhere else to live, and deliberately leaves the token, session
-  and admin secrets empty for the portal to create and persist itself. A secret with two homes is
-  how a published admin token reached users once already.
-- **`packages/portal/src/analytics.ts` is where a collected event becomes a shown number, and the
-  gap between those two is where this project has already misled itself.** The beacon collected
-  per slide dwell and completion for a long time while `summarize()` aggregated neither and the
-  console rendered neither, so the website sold a capability the dashboard did not have. Adding
-  an event type is half the work: if nothing summarises it and nothing renders it, the data
-  exists and the feature does not. Every type in `EVENT` is sent by something, summarised by
-  `summarize()` and shown by the console, and adding one means doing all three or none. The
-  reverse also holds and is the harder discipline: **if a signal cannot actually be observed,
-  it does not get an event type at all**, because a tile permanently reading zero looks like a
-  working measurement reporting good news. D33 is the worked example, and it is the reason
+  the database password, which has nowhere else to live, and deliberately leaves the token,
+  session and admin secrets empty for the portal to create and persist itself. A secret with two
+  homes is a secret that will be published from one of them.
+- **`packages/portal/src/analytics.ts` is where a collected event becomes a shown number.**
+  Adding an event type is a third of the work: if nothing summarises it and nothing renders it,
+  the data exists and the feature does not. Every type in `EVENT` is sent by something,
+  summarised by `summarize()` and shown by the console, and adding one means doing all three or
+  none. The reverse also holds and is the harder discipline: **if a signal cannot actually be
+  observed, it does not get an event type at all**, because a tile permanently reading zero looks
+  like a working measurement reporting good news. D33 is the worked example, and it is the reason
   there is no devtools detection here.
 - **Beacon numbers are viewer-supplied twice over.** `sanitizeMeta` bounds them on the way in and
   `summarize` bounds them again on the way out, because a number can arrive honestly and still
