@@ -1,6 +1,6 @@
 import { eventsCsvUrl } from "./api";
 import { OpensPulse, DeckBars } from "./charts";
-import { ago } from "./format";
+import { ago, duration } from "./format";
 import type { AnalyticsSummary } from "./types";
 
 function Tile({ label, value, alert }: { label: string; value: number; alert?: boolean }): React.ReactElement {
@@ -18,7 +18,7 @@ export function Dashboard({ data }: { data: AnalyticsSummary }): React.ReactElem
         <div className="tiles">
           <Tile label="Deck opens" value={data.totalOpens} />
           <Tile label="Unique viewers" value={data.uniqueViewers} />
-          <Tile label="Sign-ins" value={data.loginSuccesses} />
+          <Tile label="Read to the end" value={data.completions} />
           <Tile label="Scrape attempts" value={data.botAttempts.length} alert />
         </div>
 
@@ -64,6 +64,71 @@ export function Dashboard({ data }: { data: AnalyticsSummary }): React.ReactElem
               </table>
             ) : (
               <p className="empty">No readers yet.</p>
+            )}
+          </section>
+        </div>
+
+        <div className="two">
+          <section className="panel">
+            <div className="eyebrow">Attention</div>
+            <h2>Where the time went</h2>
+            <p className="cap">
+              Time on each slide, longest first. The middle column is the typical reader, not the
+              average, so one deck left open in a tab cannot move it.
+            </p>
+            {data.bySlide.length ? (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Slide</th>
+                    <th className="r">Views</th>
+                    <th className="r">Typical</th>
+                    <th className="r">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.bySlide.slice(0, 12).map((s) => (
+                    <tr key={`${s.artifactId} ${s.slideId}`}>
+                      <td className="who">{s.slideId}</td>
+                      <td className="r num">{s.views}</td>
+                      <td className="r num">{duration(s.medianDwellMs)}</td>
+                      <td className="r num">{duration(s.totalDwellMs)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="empty">Nothing read yet. This fills in as people move through a deck.</p>
+            )}
+          </section>
+
+          <section className="panel">
+            <div className="eyebrow">Depth</div>
+            <h2>How far they got</h2>
+            <p className="cap">The furthest point each person reached, and how long they spent.</p>
+            {data.reading.length ? (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Recipient</th>
+                    <th className="r">Read</th>
+                    <th className="r">Slides</th>
+                    <th className="r">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.reading.slice(0, 12).map((r) => (
+                    <tr key={`${r.recipient} ${r.artifactId}`}>
+                      <td className="who">{r.recipient}</td>
+                      <td className="r num">{r.finished ? "all of it" : `${r.completion}%`}</td>
+                      <td className="r num">{r.totalSlides ? `${r.slidesViewed} / ${r.totalSlides}` : r.slidesViewed}</td>
+                      <td className="r num">{duration(r.dwellMs)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="empty">No reading recorded yet.</p>
             )}
           </section>
         </div>

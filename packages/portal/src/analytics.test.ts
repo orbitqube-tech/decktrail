@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { EVENT, summarize, toCsv, InMemoryEventStore, type EventRecord } from "./analytics.js";
+import { EVENT, summarize, toCsv, InMemoryEventStore, MAX_CREDITED_DWELL_MS, type EventRecord } from "./analytics.js";
 
 function ev(over: Partial<EventRecord> & { type: string; ts: string }): EventRecord {
   return {
@@ -117,5 +117,88 @@ describe("CSV export cannot carry a formula into the owner's spreadsheet", () =>
 
   it("still escapes embedded quotes", () => {
     expect(rowWith('a "quoted" ua')).toContain('"a ""quoted"" ua"');
+  });
+});
+
+describe("summarize, the per-slide reading", () => {
+  const MIN = 60_000;
+  const events: EventRecord[] = [
+    // Priya reads three slides and finishes.
+    ev({ type: EVENT.slideView, ts: "2026-07-14T10:00:00Z", artifactId: "deck1", recipient: "priya@acme.example", meta: { slideId: "cover", dwellMs: 20_000 } }),
+    ev({ type: EVENT.slideView, ts: "2026-07-14T10:01:00Z", artifactId: "deck1", recipient: "priya@acme.example", meta: { slideId: "pricing", dwellMs: 3 * MIN } }),
+    ev({ type: EVENT.slideView, ts: "2026-07-14T10:05:00Z", artifactId: "deck1", recipient: "priya@acme.example", meta: { slideId: "close", dwellMs: 30_000 } }),
+    ev({ type: EVENT.deckComplete, ts: "2026-07-14T10:06:00Z", artifactId: "deck1", recipient: "priya@acme.example", meta: { slidesViewed: 3, totalSlides: 3, completion: 100 } }),
+    // Sam bails a third of the way in, and dwells hard on pricing too.
+    ev({ type: EVENT.slideView, ts: "2026-07-15T09:00:00Z", artifactId: "deck1", recipient: "sam@acme.example", meta: { slideId: "cover", dwellMs: 10_000 } }),
+    ev({ type: EVENT.slideView, ts: "2026-07-15T09:01:00Z", artifactId: "deck1", recipient: "sam@acme.example", meta: { slideId: "pricing", dwellMs: 5 * MIN } }),
+    ev({ type: EVENT.deckComplete, ts: "2026-07-15T09:07:00Z", artifactId: "deck1", recipient: "sam@acme.example", meta: { slidesViewed: 2, totalSlides: 3, completion: 66 } }),
+  ];
+  const s = summarize(events);
+
+  it("counts a completion per deck_complete", () => {
+    expect(s.completions).toBe(2);
+  });
+
+  it("ranks slides by the attention they actually held", () => {
+    expect(s.bySlide[0].slideId).toBe("pricing");
+    expect(s.bySlide[0].artifactId).toBe("deck1");
+    expect(s.bySlide[0].views).toBe(2);
+    expect(s.bySlide[0].viewers).toBe(2);
+    expect(s.bySlide[0].totalDwellMs).toBe(8 * MIN);
+  });
+
+  it("reports how far each person got, furthest first", () => {
+    expect(s.reading.map((r) => r.recipient)).toEqual(["priya@acme.example", "sam@acme.example"]);
+    const priya = s.reading[0];
+    expect(priya.slidesViewed).toBe(3);
+    expect(priya.totalSlides).toBe(3);
+    expect(priya.completion).toBe(100);
+    expect(priya.finished).toBe(true);
+    expect(priya.dwellMs).toBe(20_000 + 3 * MIN + 30_000);
+    expect(s.reading[1].finished).toBe(false);
+    expect(s.reading[1].completion).toBe(66);
+  });
+
+  // The number this feature exists to support is "they spent a long time on pricing". A tab left
+  // open overnight would otherwise answer that question with sixty hours.
+  it("does not credit a deck left open in a background tab", () => {
+    const abandoned = summarize([
+      ev({ type: EVENT.slideView, ts: "2026-07-14T10:00:00Z", artifactId: "d", recipient: "a@b.c", meta: { slideId: "s1", dwellMs: 60 * 60 * 1000 } }),
+    ]);
+    expect(abandoned.bySlide[0].totalDwellMs).toBe(MAX_CREDITED_DWELL_MS);
+    expect(abandoned.reading[0].dwellMs).toBe(MAX_CREDITED_DWELL_MS);
+  });
+
+  it("takes the middle reading rather than the mean, so one long view cannot move it", () => {
+    const skewed = summarize([
+      ev({ type: EVENT.slideView, ts: "2026-07-14T10:00:00Z", artifactId: "d", recipient: "a@b.c", meta: { slideId: "s1", dwellMs: 1000 } }),
+      ev({ type: EVENT.slideView, ts: "2026-07-14T10:01:00Z", artifactId: "d", recipient: "b@b.c", meta: { slideId: "s1", dwellMs: 2000 } }),
+      ev({ type: EVENT.slideView, ts: "2026-07-14T10:02:00Z", artifactId: "d", recipient: "c@b.c", meta: { slideId: "s1", dwellMs: 20 * MIN } }),
+    ]);
+    expect(skewed.bySlide[0].medianDwellMs).toBe(2000);
+  });
+
+  it("keeps the furthest point reached when somebody reopens and skims", () => {
+    const reopened = summarize([
+      ev({ type: EVENT.deckComplete, ts: "2026-07-14T10:00:00Z", artifactId: "d", recipient: "a@b.c", meta: { slidesViewed: 9, totalSlides: 10, completion: 90 } }),
+      ev({ type: EVENT.deckComplete, ts: "2026-07-16T10:00:00Z", artifactId: "d", recipient: "a@b.c", meta: { slidesViewed: 1, totalSlides: 10, completion: 10 } }),
+    ]);
+    expect(reopened.reading[0].completion).toBe(90);
+  });
+
+  it("ignores a slide_view with no slide id rather than inventing one", () => {
+    const junk = summarize([
+      ev({ type: EVENT.slideView, ts: "2026-07-14T10:00:00Z", artifactId: "d", recipient: "a@b.c", meta: { dwellMs: 5000 } }),
+    ]);
+    expect(junk.bySlide).toEqual([]);
+  });
+
+  it("separates the same slide id in two different decks", () => {
+    const two = summarize([
+      ev({ type: EVENT.slideView, ts: "2026-07-14T10:00:00Z", artifactId: "deckA", recipient: "a@b.c", meta: { slideId: "cover", dwellMs: 1000 } }),
+      ev({ type: EVENT.slideView, ts: "2026-07-14T10:00:00Z", artifactId: "deckB", recipient: "a@b.c", meta: { slideId: "cover", dwellMs: 1000 } }),
+    ]);
+    expect(two.bySlide).toHaveLength(2);
+    expect(two.bySlide.map((s) => s.artifactId).sort()).toEqual(["deckA", "deckB"]);
   });
 });

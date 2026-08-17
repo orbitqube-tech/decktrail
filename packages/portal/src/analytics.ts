@@ -1,8 +1,13 @@
 /**
  * First-party analytics: the event log and the summaries the sender reads. Umami is out
- * (D2); this is the portal's own model, backed by the `events` table. This slice records
- * the server-side events; the per-slide browser events (slide_view, deck_complete, and the
- * protection tripwires) are a following slice, and land in the same store and summary.
+ * (D2); this is the portal's own model, backed by the `events` table. It records the
+ * server-side events and the browser events the beacon posts, and summarises both: opens and
+ * who made them, per slide attention from slide_view, and reading depth from deck_complete.
+ *
+ * Everything the beacon sends is viewer-supplied. sanitizeMeta bounds it on the way in, and
+ * summarize bounds it again on the way out (MAX_CREDITED_DWELL_MS), because a number that
+ * arrived honestly can still describe something that did not happen, such as a tab left open
+ * over a weekend.
  */
 
 /** The portal path the engagement beacon posts browser events to. One authoritative home. */
@@ -117,6 +122,38 @@ export interface DailyOpens {
   opens: number;
 }
 
+/** Attention on one slide of one artifact, gathered from the beacon's slide_view events. */
+export interface SlideStat {
+  artifactId: string;
+  slideId: string;
+  views: number;
+  viewers: number;
+  /** Sum of credited dwell across every view. See MAX_CREDITED_DWELL_MS. */
+  totalDwellMs: number;
+  /**
+   * The middle view's dwell, not the mean. A deck left open in a background tab produces one
+   * enormous reading that drags a mean somewhere no one actually spent time, and the number
+   * most people want from this column is "how long does a reader usually stay here".
+   */
+  medianDwellMs: number;
+}
+
+/** How far one person got through one artifact. */
+export interface ReadingStat {
+  recipient: string;
+  artifactId: string;
+  /** Distinct slides the beacon saw them on. */
+  slidesViewed: number;
+  /** The deck's length, as the beacon counted it. Null until a deck_complete arrives. */
+  totalSlides: number | null;
+  /** The furthest point reached, as a percentage. The beacon sends 0 to 100, not a fraction. */
+  completion: number;
+  /** Credited dwell summed across their slide views. */
+  dwellMs: number;
+  /** They reached the last slide. */
+  finished: boolean;
+}
+
 /** What the sender sees: opens, who and what, over time, plus the protection signals. */
 export interface AnalyticsSummary {
   totalOpens: number;
@@ -127,7 +164,24 @@ export interface AnalyticsSummary {
   byRecipient: RecipientStat[];
   opensOverTime: DailyOpens[];
   botAttempts: BotAttempt[];
+  /** Per slide attention, most dwelt on first. */
+  bySlide: SlideStat[];
+  /** Reading depth per person per artifact, furthest first. */
+  reading: ReadingStat[];
+  /** How many times a reader reached the end of something. */
+  completions: number;
 }
+
+/**
+ * The most time one view of one slide may contribute.
+ *
+ * The beacon reports dwell when the slide changes or the page goes away, so a deck left open in
+ * a tab over a weekend arrives as a single reading of about sixty hours. Counting it would turn
+ * "they spent a long time on the pricing slide", which is the sentence this whole feature exists
+ * to support, into a lie told with real data. Thirty minutes is longer than anyone reads one
+ * slide and short enough that an abandoned tab cannot dominate a total.
+ */
+export const MAX_CREDITED_DWELL_MS = 30 * 60 * 1000;
 
 /** Longest string value kept from beacon meta, to bound storage of viewer-supplied text. */
 const MAX_META_STRING = 200;
@@ -147,6 +201,19 @@ export function sanitizeMeta(input: unknown): Record<string, unknown> | undefine
     else if (typeof v === "string") out[key] = v.slice(0, MAX_META_STRING);
   }
   return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/**
+ * The middle value of an already sorted list, averaging the two middles when the count is even.
+ * Written out rather than inlined so the index reads are guarded rather than asserted: an
+ * out-of-range read here would silently produce NaN and show up as a blank column.
+ */
+function medianOf(sorted: readonly number[], mid: number): number {
+  if (sorted.length === 0) return 0;
+  const hi = sorted[mid] ?? 0;
+  if (sorted.length % 2 === 1) return hi;
+  const lo = sorted[mid - 1] ?? hi;
+  return Math.round((lo + hi) / 2);
 }
 
 /** The calendar day (UTC) of a timestamp, as YYYY-MM-DD. */
@@ -203,6 +270,88 @@ export function summarize(events: EventRecord[]): AnalyticsSummary {
     .filter((e) => e.type === EVENT.botBlocked)
     .map((e) => ({ ts: e.ts.toISOString(), ip: e.ip ?? null, ua: e.ua ?? null }));
 
+  // ---- reading: the per-slide browser events, rolled up ----------------------------------
+  // slide_view carries {slideId, dwellMs}; deck_complete carries {slidesViewed, totalSlides,
+  // completion} with completion as a percentage. Both are viewer-supplied and already bounded
+  // by sanitizeMeta, so the only thing left to defend against here is an honest tab left open.
+  const slideMap = new Map<string, { dwells: number[]; viewers: Set<string> }>();
+  const readMap = new Map<
+    string,
+    { recipient: string; artifactId: string; slides: Set<string>; total: number | null; completion: number; dwellMs: number }
+  >();
+
+  // JSON rather than a delimiter, because a slide id or an address is free text and any
+  // separator picked by hand is a separator that eventually appears inside a value.
+  const readKey = (recipient: string, artifactId: string) => JSON.stringify([recipient, artifactId]);
+  const readFor = (recipient: string, artifactId: string) => {
+    const k = readKey(recipient, artifactId);
+    const r = readMap.get(k) ?? { recipient, artifactId, slides: new Set<string>(), total: null, completion: 0, dwellMs: 0 };
+    readMap.set(k, r);
+    return r;
+  };
+
+  for (const e of events) {
+    const artifactId = e.artifactId ?? "unknown";
+
+    if (e.type === EVENT.slideView) {
+      const slideId = typeof e.meta?.slideId === "string" ? e.meta.slideId : null;
+      if (!slideId) continue;
+      const raw = typeof e.meta?.dwellMs === "number" ? e.meta.dwellMs : 0;
+      const dwell = Math.min(Math.max(raw, 0), MAX_CREDITED_DWELL_MS);
+
+      const key = JSON.stringify([artifactId, slideId]);
+      const s = slideMap.get(key) ?? { dwells: [], viewers: new Set<string>() };
+      s.dwells.push(dwell);
+      if (e.recipient) s.viewers.add(e.recipient);
+      slideMap.set(key, s);
+
+      if (e.recipient) {
+        const r = readFor(e.recipient, artifactId);
+        r.slides.add(slideId);
+        r.dwellMs += dwell;
+      }
+      continue;
+    }
+
+    if (e.type === EVENT.deckComplete && e.recipient) {
+      const r = readFor(e.recipient, artifactId);
+      const total = typeof e.meta?.totalSlides === "number" ? e.meta.totalSlides : null;
+      const pct = typeof e.meta?.completion === "number" ? e.meta.completion : 0;
+      if (total !== null) r.total = total;
+      // Furthest reached wins, so re-opening and skimming the first slide cannot walk it back.
+      if (pct > r.completion) r.completion = Math.min(Math.max(pct, 0), 100);
+    }
+  }
+
+  const bySlide: SlideStat[] = [...slideMap.entries()]
+    .map(([key, s]) => {
+      const [artifactId = "unknown", slideId = "unknown"] = JSON.parse(key) as string[];
+      const sorted = [...s.dwells].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      const median = medianOf(sorted, mid);
+      return {
+        artifactId,
+        slideId,
+        views: s.dwells.length,
+        viewers: s.viewers.size,
+        totalDwellMs: s.dwells.reduce((a, b) => a + b, 0),
+        medianDwellMs: median,
+      };
+    })
+    .sort((a, b) => b.totalDwellMs - a.totalDwellMs);
+
+  const reading: ReadingStat[] = [...readMap.values()]
+    .map((r) => ({
+      recipient: r.recipient,
+      artifactId: r.artifactId,
+      slidesViewed: r.slides.size,
+      totalSlides: r.total,
+      completion: r.completion,
+      dwellMs: r.dwellMs,
+      finished: r.completion >= 100,
+    }))
+    .sort((a, b) => b.completion - a.completion || b.dwellMs - a.dwellMs);
+
   return {
     totalOpens: opens.length,
     uniqueViewers: recipientMap.size,
@@ -212,6 +361,9 @@ export function summarize(events: EventRecord[]): AnalyticsSummary {
     byRecipient,
     opensOverTime,
     botAttempts,
+    bySlide,
+    reading,
+    completions: events.filter((e) => e.type === EVENT.deckComplete).length,
   };
 }
 

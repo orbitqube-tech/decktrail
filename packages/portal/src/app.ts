@@ -407,6 +407,19 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     if (resolved === null) {
       // Withdrawn, never existed, or someone else's: all the same answer, deliberately. Saying
       // which would confirm to a stranger that a share id is real and who it belongs to.
+      //
+      // The owner is told, though. A signed-in person opening a share that is not theirs is what
+      // a forwarded link looks like from this side, and it went unrecorded: the refusal worked
+      // and left no trace, so the one thing the owner would want to know about it was the one
+      // thing nothing captured. The visitor's response is unchanged, byte for byte.
+      await recordEvent(deps, {
+        workspace: viewer.workspace,
+        type: EVENT.denied,
+        recipient: viewer.email,
+        ip,
+        ua,
+        meta: { reason: "share-not-for-this-viewer" },
+      });
       const brand = (await deps.settings?.get("brand_name")) ?? defaultBrandName;
       return reply
         .code(404)

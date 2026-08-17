@@ -215,14 +215,24 @@ Per `DECISIONS.md` D10, every viewer-facing event (`deck_open`, `slide_view`,
 version the viewer actually saw, so the engagement timeline is version-aware and the audit
 trail can answer exactly what a named person saw and when.
 
-What the sender sees, which is the actual value:
+What the sender sees, which is the actual value. Split by what is on the dashboard today and
+what is not, because a list that mixes the two reads as a description and is really a wish:
 
-- Who opened it, when, how many times, from where.
-- A per slide dwell timeline. Where they lingered. Where they skipped.
-- Completion percentage. Where they gave up.
-- Forward detection. Same link, new device or new network.
-- An engagement score, so ten prospects can be ranked at a glance.
-- Alerts. "Acme just opened your deck." "Someone is scraping slide 14."
+Built:
+
+- Who opened it, when, and how many times, per deck and per person.
+- Per slide attention. Which slides held people, as a total and as a typical reading.
+- Completion. How far each person got, and whether they reached the end.
+- Refusals. A known scraper turned away, and a signed-in person opening a share that is not
+  theirs, which is what a forwarded link looks like from this side.
+- The whole event log as a CSV.
+
+Not built:
+
+- Forward detection by device or network. The refusal above is recorded, but nothing
+  fingerprints a device, and nothing correlates one link across networks.
+- An engagement score. The numbers are there; nothing ranks prospects from them.
+- Alerts. The threat model says this out loud too: you find out when you look.
 
 This is the honeypot. It is the feature people adopt for, before they care about the
 protection. It should be beautiful.

@@ -21,6 +21,25 @@ export interface DailyOpens {
   date: string;
   opens: number;
 }
+/** Mirrors SlideStat in packages/portal/src/analytics.ts. */
+export interface SlideStat {
+  artifactId: string;
+  slideId: string;
+  views: number;
+  viewers: number;
+  totalDwellMs: number;
+  medianDwellMs: number;
+}
+/** Mirrors ReadingStat in packages/portal/src/analytics.ts. */
+export interface ReadingStat {
+  recipient: string;
+  artifactId: string;
+  slidesViewed: number;
+  totalSlides: number | null;
+  completion: number;
+  dwellMs: number;
+  finished: boolean;
+}
 export interface AnalyticsSummary {
   totalOpens: number;
   uniqueViewers: number;
@@ -30,6 +49,9 @@ export interface AnalyticsSummary {
   byRecipient: RecipientStat[];
   opensOverTime: DailyOpens[];
   botAttempts: BotAttempt[];
+  bySlide: SlideStat[];
+  reading: ReadingStat[];
+  completions: number;
 }
 export interface AuthConfig {
   turnstileSitekey: string | null;

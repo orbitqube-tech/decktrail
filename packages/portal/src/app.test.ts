@@ -253,6 +253,35 @@ describe("analytics and admin surface", () => {
     expect(open).toMatchObject({ artifactId: "art_1", versionId: "ver_1", recipient: "user@decktrail.orbitqube" });
   });
 
+  // A forwarded link, from the server's side: a real session, opening a share that is not theirs.
+  // The refusal always worked and left no trace, so the owner could not see it had happened.
+  it("records a denial when a signed-in viewer opens a share that is not theirs", async () => {
+    const { app, settings, events, state } = analyticsHarness();
+    await settings.set("setup_complete", "true");
+    const cookie = await signIn(app, state, "user@decktrail.orbitqube");
+    const res = await app.inject({ method: "GET", url: "/d/somebody-elses", headers: { cookie } });
+    expect(res.statusCode).toBe(404);
+    const denied = (await events.list("default")).find((e) => e.type === EVENT.denied);
+    expect(denied).toMatchObject({ recipient: "user@decktrail.orbitqube" });
+    expect(denied?.meta).toMatchObject({ reason: "share-not-for-this-viewer" });
+  });
+
+  // The visitor must learn nothing from the new record. Withdrawn, never existed and someone
+  // else's all have to stay the same answer, or the 404 becomes an oracle for valid share ids.
+  it("tells the visitor nothing new when it records that denial", async () => {
+    const { app, settings, state } = analyticsHarness();
+    await settings.set("setup_complete", "true");
+    const cookie = await signIn(app, state, "user@decktrail.orbitqube");
+    const a = await app.inject({ method: "GET", url: "/d/somebody-elses", headers: { cookie } });
+    const b = await app.inject({ method: "GET", url: "/d/never-existed", headers: { cookie } });
+    expect(a.statusCode).toBe(b.statusCode);
+    // The page echoes the id the visitor asked for, in the sign-out link. That is their own
+    // input coming back, not a statement about whether the share exists, so it is normalised
+    // away before comparing. Everything else has to be identical.
+    const normalise = (body: string, id: string) => body.split(id).join("<ID>");
+    expect(normalise(a.body, "somebody-elses")).toBe(normalise(b.body, "never-existed"));
+  });
+
   it("blocks an AI user-agent on the content route with 403 and records bot_blocked", async () => {
     const { app, settings, events } = analyticsHarness();
     await settings.set("setup_complete", "true");
