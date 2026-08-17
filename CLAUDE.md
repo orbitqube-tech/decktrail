@@ -94,7 +94,7 @@ also pins the author to the maintainer, so **do not enable it on a fork**; see
 | Package | What it is |
 |---|---|
 | `packages/ir` | Zod schemas. A deck is JSON. This is the boundary: constrain values here, not at the renderer. |
-| `packages/renderers` | Pure functions, IR plus theme to HTML. Standalone and portal (watermarked) variants. |
+| `packages/renderers` | Pure functions, IR plus theme to HTML. Standalone and portal (watermarked) variants. `layouts.ts` and the four `layout-*.ts` beside it are CSS layers over the one shell: a layout names no colour, so it composes with any theme, and never touches slide visibility, so navigation keeps working. Both rules are tested, and D32 says why. |
 | `packages/portal` | Fastify, Drizzle, Postgres. Auth, the admin API, and serving gated decks. |
 | `packages/generate` | The generation engine: prompt, repair loop, and the model providers. A library: no filesystem, no argv, no portal, and it never reads the environment. It also makes no network call of its own, holds no credential and has no cost model, and D29 says why. |
 | `packages/ingest` | DeckTrail's thin surface over the shared `@orbitqube/oq-ai-ocr` library (D28). Bytes in, text out: PDF, PowerPoint, Word, and images, with OCR only when a document carries no text of its own. Re-authors, never converts (D4, D26). Runs on the author's machine, never the server. |
