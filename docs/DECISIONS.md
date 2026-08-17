@@ -1010,3 +1010,40 @@ two homes is the thing that caused this.
   busy when DeckTrail's own stack was the thing holding it, so the second run of a script whose whole
   promise is that it is safe to run twice failed on the port it had itself taken. "Busy" now means
   somebody else: our own healthy stack on that port is recognised and left alone.
+
+
+## D31. A theme carries colour and type, never layout, and four inherited stylesheets turned out to be three palettes
+
+**Decision:** DeckTrail ships named themes (`crest`, `editorial`, `vivid`) and does not ship
+alternate layouts. `--theme` selects colour and type; every deck renders through the same shell.
+
+Four stylesheets and four matching layout fragments arrived together, described as four premium
+layouts. They were measured rather than taken at their word, and the count was wrong.
+
+- `theme-crest.css` and `theme-vivid.css` are **byte identical outside their `:root` block**,
+  198,250 identical bytes each. They are one stylesheet with two palettes.
+- Their layout fragments share 34 of 39 class names with the deck shell, 87 percent. They are
+  DeckTrail renders, so extracting their `:root` tokens back into a theme reproduces them exactly.
+- The `vivid` palette turned out to be the `storybook` palette already expressed in DeckTrail's own
+  token names: cream to `bg`, blue to `accent`, teal to `accentDim`, pink to `accent2`, orange to
+  `accent2Dim`. Shipping both would have shipped one theme under two names.
+
+That left `storybook` and `editorial`, which are genuinely different and were **not** adopted as
+layouts. Their fragments share 6 of 66 and 10 of 76 class names with the shell, 9 and 13 percent.
+Reproducing them means roughly sixty new classes each, plus renderer support to emit markup for
+them. What those sixty classes express is decoration, torn paper edges, tape strips, gloss chips,
+chevron navigation, a running foot. The IR already has the structural ideas underneath:
+`callout`, `stat-grid`, `blockquote`, `statement`, `comparison` and `timeline` are all existing
+slide layouts. So the two files carried no capability the product lacked, and their transferable
+value was the palette, which was taken. `editorial` ships as a theme; its dim tones repeat their
+base colour rather than introduce shades nobody chose.
+
+**Why this is recorded:** the same four files will look like four unused layouts to the next
+person who finds them, and the obvious next move, wiring them in as they are, would ship a
+duplicate theme and roughly 388 KB of embedded fonts that `.gitignore` already declines to carry
+on licensing grounds. It would also quietly redefine a theme as something that changes layout,
+which is what makes a theme swappable after a deck is written.
+
+**How to reopen it:** an alternate layout is a renderer change, not a theme. It needs a shell
+variant and IR support for the blocks it introduces, and it should be argued for on what a reader
+gains, not on the existence of a stylesheet.
