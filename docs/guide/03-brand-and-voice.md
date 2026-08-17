@@ -39,6 +39,15 @@ decktrail push  deck.json --theme theme.json --portal <url> --token <token> --re
 decktrail brand https://acme.example --out theme.json
 ```
 
+**One that already ships.** For a preview, or when the deck is not going out under a brand at
+all, `--theme` also takes a name: `crest`, `editorial`, or `vivid`. These set colour and type
+only, they carry no logo, and naming none of them leaves the neutral default in place. See
+[the CLI reference](../reference/cli.md#themes).
+
+```sh
+decktrail render deck.json --theme editorial --out preview.html
+```
+
 It gets you part of the way (a real site rarely exposes every token), then you finish it in the
 console or the file. A hue-named brand color, for instance, cannot be inferred and is set by hand.
 

@@ -4,6 +4,7 @@ import { Theme } from "@decktrail/ir";
 import { generateDeck, createProvider, PROVIDER_IDS } from "@decktrail/generate";
 import { extract as extractDocument, type Extracted } from "@decktrail/ingest";
 import { runValidate, runRender } from "./commands.js";
+import { resolveTheme } from "./themes.js";
 import { publishAndShare, fetchVoice } from "./push.js";
 import { fetchBrand } from "./brand.js";
 import { loadConfig, describeConfig, type ConfigFlags, type StudioConfig } from "./config.js";
@@ -13,12 +14,14 @@ function usage(): never {
   process.stdout.write(`decktrail <command>
 
   validate <file>                    Validate a DeckTrail IR JSON file.
-  render <file> [--out <file>] [--theme <file.json>] [--public | --confidential <text>]
+  render <file> [--out <file>] [--theme <file.json>|<name>] [--public | --confidential <text>]
                                      Render an IR file to standalone HTML. Marked
                                      "Private & Confidential" unless --public drops the
                                      label or --confidential replaces its text. The brand
                                      comes from --theme, else theme.json here, else a
-                                     neutral default.
+                                     neutral default. --theme takes a path or one of the
+                                     themes that ship with DeckTrail: crest, editorial,
+                                     vivid. A theme sets colour and type, never layout.
   extract <file> [--out <file.md>] [--ocr auto|never|force] [--ocr-lang <code>]
                  [--ocr-tier auto|tiny|small|medium|server] [--ocr-model-path <dir>]
                                      Pull the text out of a PDF, a PowerPoint deck, a Word
@@ -185,8 +188,13 @@ async function main(): Promise<void> {
     // A local render had no way to apply a brand: it always used the neutral theme, so a deck
     // rendered here came out unbranded however carefully the theme had been set up. The portal
     // applies a per-artifact theme when it serves (D16); this is the same thing on your machine.
-    const themePath = flag(rest, "--theme") ?? (existsSync("theme.json") ? "theme.json" : undefined);
-    const theme = themePath ? Theme.parse(JSON.parse(readFileSync(themePath, "utf8"))) : undefined;
+    // --theme takes either a path or the name of a theme that ships with DeckTrail. Naming
+    // neither leaves the theme undefined, and the neutral theme stays the default as before.
+    const theme = resolveTheme(flag(rest, "--theme"), {
+      exists: existsSync,
+      read: (p) => readFileSync(p, "utf8"),
+      parse: (v) => Theme.parse(v),
+    });
     const html = runRender(JSON.parse(readFileSync(file, "utf8")), theme, opts);
     const out = flag(rest, "--out");
     if (out) {

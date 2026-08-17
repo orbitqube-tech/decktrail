@@ -30,13 +30,14 @@ validates too, but this one is the cheap check that tells you which field is wro
 
 ---
 
-## `render <file> [--out <file>] [--public | --confidential <text>]`
+## `render <file> [--out <file>] [--theme <file>|<name>] [--public | --confidential <text>]`
 
 Render an IR file to one self-contained HTML file. No portal involved, no watermark, no
 tracking: this is the "hand someone a file" path.
 
 ```sh
 decktrail render deck.json --out preview.html
+decktrail render deck.json --theme crest --out preview.html
 decktrail render talk.json --public --out talk.html
 decktrail render deck.json --confidential "Under NDA" --out deck.html
 ```
@@ -44,12 +45,37 @@ decktrail render deck.json --confidential "Under NDA" --out deck.html
 | Flag | Effect |
 |---|---|
 | `--out <file>` | Write to a file. Without it, the HTML goes to stdout. |
+| `--theme <file>\|<name>` | A `theme.json` path, or the name of a theme below. |
 | `--public` | Drop the confidentiality label. |
 | `--confidential <text>` | Replace the label's text. |
 
 Every deck is marked **"Private & Confidential"** unless you say otherwise, because a deck sent
 to a client is the overwhelmingly common case and should not need a flag. Use `--public` for a
 talk, a portfolio piece, or a marketing deck: anything meant to be handed around.
+
+### Themes
+
+**A theme is colour and type. It is not a layout.** Every theme renders through the same shell,
+so choosing one restyles a deck without moving anything on it. That is what lets you swap a
+theme after the deck is written, and it is also the honest limit of what a theme will do for
+you: it will not rearrange a slide.
+
+Three ship with DeckTrail, and naming no theme keeps the neutral default you already had.
+
+| Name | What it looks like |
+|---|---|
+| `crest` | Cool and high contrast. Navy against a muted red, on near white. |
+| `editorial` | Serif, on warm paper. Navy against rust. |
+| `vivid` | Warm and saturated, on cream. Blue and teal against pink and orange. |
+
+```sh
+decktrail render deck.json --theme editorial --out preview.html
+```
+
+Without `--theme`, `render` uses `theme.json` in the working directory if one is there, and the
+neutral theme otherwise. When you pass `--theme`, a path that exists always wins over a name, so
+a theme added here later can never quietly take over a file you already render with. Build your
+own with [`brand`](#brand-url---out-file), or write a `theme.json` by hand.
 
 ---
 
