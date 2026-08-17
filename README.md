@@ -2,6 +2,8 @@
 
 **Your decks, private to each client and traceable. Self-hosted and free.**
 
+[![Deploy on Elestio](https://elest.io/images/deploy-on-elestio-black.svg)](https://elest.io/onboard?repository=https://github.com/orbitqube-tech/decktrail)
+
 You send a client a deck that took days to get right, and most of the time you hear nothing back.
 You never learn whether it was opened, which section held their attention, or where they lost
 interest. DeckTrail gives the work you send a home you own: a branded, gated, watermarked web
