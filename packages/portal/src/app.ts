@@ -43,6 +43,13 @@ export interface Publisher {
     recipient: string;
     version?: number;
   }): Promise<{ shareId: string } | null>;
+  /**
+   * Revoke a share so it stops resolving from now on (content.ts gates on revokedAt being
+   * null). Returns who held it, so the caller can also end any live session that share already
+   * granted; null when no such share exists. Idempotent: revoking an already-revoked share
+   * still returns its recipient and workspace rather than erroring.
+   */
+  revokeShare(shareId: string): Promise<{ recipient: string; workspace: string } | null>;
 }
 
 export interface AppDeps {
@@ -508,6 +515,24 @@ export function buildApp(deps: AppDeps): FastifyInstance {
         .send({ error: `no artifact with slug "${body.slug}" in workspace "${workspace}"` });
     }
     return reply.code(201).send({ shareId: share.shareId, url: `https://${config.baseHost}/d/${share.shareId}` });
+  });
+
+  // Revoke a share. Same Bearer token as /admin/publish and /admin/shares above it,
+  // since this is reached by the CLI rather than the console. Idempotent, like the theme
+  // delete below it: revoking an already-revoked or unknown share still answers 204.
+  //
+  // Stopping a link from working in future is not the same as ending access somebody already
+  // has: a viewer who signed in before the revoke holds a live session that the link no longer
+  // gates. revokeByEmail (auth/stores.ts) is the primitive that ends it, the same one self
+  // sign-out uses, so a revoke cannot leave the current viewer still reading the deck.
+  app.delete("/admin/shares/:id", async (request, reply) => {
+    const auth = adminAuth(request, config);
+    if (auth === "disabled") return reply.code(503).send({ error: "admin disabled" });
+    if (auth === "unauthorized") return reply.code(401).send({ error: "unauthorized" });
+    if (!deps.publisher) return reply.code(503).send({ error: "publishing not configured" });
+    const revoked = await deps.publisher.revokeShare((request.params as { id: string }).id);
+    if (revoked) await deps.sessions.revokeByEmail(revoked.recipient, revoked.workspace);
+    return reply.code(204).send();
   });
 
   // Analytics summary for the owner. Gated by an admin magic-link session (the admin email

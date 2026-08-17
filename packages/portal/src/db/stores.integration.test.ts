@@ -133,4 +133,33 @@ describe.skipIf(!url)("Drizzle stores against Postgres", () => {
     expect(await resolve(share!.shareId, { email: "user@decktrail.orbitqube", workspace: "default" })).not.toBeNull();
     expect(await resolve(share!.shareId, { email: "other@decktrail.orbitqube", workspace: "default" })).toBeNull();
   });
+
+  it("revokes a share against real Postgres, refusing it afterwards, idempotently", async () => {
+    const slug = `revoke-${randomToken(6)}`;
+    const pub = new DrizzlePublisher(db);
+    const deck = {
+      id: "d2",
+      title: "Revocable",
+      slug,
+      workspace: "default",
+      kind: "slide-deck",
+      slides: [{ id: "s1", layout: "bullets", heading: "Bye", items: ["One"] }],
+    };
+    await pub.publish({ workspace: "default", slug, kind: "slide-deck", title: "Revocable", ir: deck, author: "op" });
+    const share = await pub.createShare({ workspace: "default", slug, recipient: "user@decktrail.orbitqube" });
+    const resolve = makeResolveContent(db);
+
+    expect(await resolve(share!.shareId, { email: "user@decktrail.orbitqube", workspace: "default" })).not.toBeNull();
+
+    const first = await pub.revokeShare(share!.shareId);
+    expect(first).toMatchObject({ recipient: "user@decktrail.orbitqube", workspace: "default" });
+    expect(await resolve(share!.shareId, { email: "user@decktrail.orbitqube", workspace: "default" })).toBeNull();
+
+    // Idempotent: revoking again is not an error, and still reports who held it.
+    const second = await pub.revokeShare(share!.shareId);
+    expect(second).toMatchObject({ recipient: "user@decktrail.orbitqube", workspace: "default" });
+
+    // Unknown share id: nothing to revoke, nothing to report.
+    expect(await pub.revokeShare("shr_does_not_exist")).toBeNull();
+  });
 });

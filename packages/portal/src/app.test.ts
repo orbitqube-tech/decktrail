@@ -28,7 +28,7 @@ const config: Config = {
 function harness() {
   const magicLinks = new InMemoryMagicLinkStore();
   const sessions = new InMemorySessionStore();
-  const state = { sentUrl: "", published: [] as unknown[], shared: [] as unknown[] };
+  const state = { sentUrl: "", published: [] as unknown[], shared: [] as unknown[], revoked: new Set<string>() };
   const app = buildApp({
     config,
     magicLinks,
@@ -38,7 +38,7 @@ function harness() {
       state.sentUrl = url;
     },
     resolveContent: async (shareId, viewer) =>
-      shareId === "abc"
+      shareId === "abc" && !state.revoked.has(shareId)
         ? { html: `<!doctype html><title>ok</title>${viewer.email}`, artifactId: "art_1", versionId: "ver_1" }
         : null,
     publisher: {
@@ -49,6 +49,11 @@ function harness() {
       createShare: async (input) => {
         state.shared.push(input);
         return input.slug === "proposal" ? { shareId: "shr_1" } : null;
+      },
+      revokeShare: async (shareId) => {
+        if (shareId !== "abc") return null;
+        state.revoked.add(shareId);
+        return { recipient: "user@decktrail.orbitqube", workspace: "default" };
       },
     },
   });
@@ -555,6 +560,48 @@ describe("portal admin ingest", () => {
     expect(res.statusCode).toBe(201);
     expect(res.json().shareId).toBe("shr_1");
     expect(res.json().url).toContain("/d/shr_1");
+  });
+
+  it("revoking a share refuses a subsequent fetch of it", async () => {
+    const { app, state } = harness();
+    const revoke = await app.inject({ method: "DELETE", url: "/admin/shares/abc", headers: authHeader });
+    expect(revoke.statusCode).toBe(204);
+
+    // Signed in fresh, after the revoke, so this proves the share itself no longer resolves
+    // (content.ts's isNull(revokedAt) gate), not merely that an earlier session died.
+    await app.inject({ method: "POST", url: "/auth/request", payload: { email: "user@decktrail.orbitqube" } });
+    const claimed = await app.inject({ method: "GET", url: pathOf(state.sentUrl) });
+    const cookie = cookieOf(claimed.headers["set-cookie"]);
+    const res = await app.inject({ method: "GET", url: "/d/abc", headers: { cookie } });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it("revoking an already-revoked share is not an error", async () => {
+    const { app } = harness();
+    const first = await app.inject({ method: "DELETE", url: "/admin/shares/abc", headers: authHeader });
+    const second = await app.inject({ method: "DELETE", url: "/admin/shares/abc", headers: authHeader });
+    expect(first.statusCode).toBe(204);
+    expect(second.statusCode).toBe(204);
+  });
+
+  // The one that matters: stopping a link from working in future is not the same as ending
+  // access somebody already has. Built the way "kills a live session when the recipient is
+  // revoked" (above) builds its equivalent: sign in, prove the session is live, act, prove it
+  // is dead. Here the action is the revoke route rather than a direct call to
+  // sessions.revokeByEmail, so this proves the route wires that primitive in, not just that the
+  // primitive itself works.
+  it("kills a live session granted by a share when that share is revoked", async () => {
+    const { app, state } = harness();
+    await app.inject({ method: "POST", url: "/auth/request", payload: { email: "user@decktrail.orbitqube" } });
+    const claimed = await app.inject({ method: "GET", url: pathOf(state.sentUrl) });
+    const cookie = cookieOf(claimed.headers["set-cookie"]);
+
+    expect((await app.inject({ method: "GET", url: "/d/abc", headers: { cookie } })).statusCode).toBe(200);
+
+    const revoke = await app.inject({ method: "DELETE", url: "/admin/shares/abc", headers: authHeader });
+    expect(revoke.statusCode).toBe(204);
+
+    expect((await app.inject({ method: "GET", url: "/d/abc", headers: { cookie } })).statusCode).toBe(401);
   });
 });
 

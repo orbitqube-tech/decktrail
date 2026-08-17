@@ -60,6 +60,10 @@ function usage(): never {
                                      neutral default.
   push <file> [--portal <url>] [--token <token>] [--recipient <email>] [--theme <file>]
                                      Publish an IR file to a portal, and optionally share it.
+  revoke <shareId> [--portal <url>] [--token <token>]
+                                     End a share now: its link stops resolving, and anyone who
+                                     already signed in through it loses that session too, not
+                                     only future visits. Safe to run again on the same share.
   brand <url> [--out <file>]         Extract a theme from a website into theme.json.
   voice pull [--portal <url>] [--token <token>]
                                      Read the voice from the portal and cache it locally, so
@@ -334,6 +338,20 @@ async function main(): Promise<void> {
     const { published, share } = await publishAndShare(url, token, ir, { theme, recipient });
     process.stdout.write(`published: artifact ${published.artifactId}, version ${published.version}\n`);
     if (share) process.stdout.write(`share: ${share.url}\n`);
+    return;
+  }
+
+  if (cmd === "revoke") {
+    if (!file) usage();
+    const config = loadConfig(configFlags(rest));
+    const { url, token } = requirePortal(config);
+    const base = url.replace(/\/$/, "");
+    const res = await fetch(`${base}/admin/shares/${encodeURIComponent(file)}`, {
+      method: "DELETE",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error(`request to ${base}/admin/shares/${file} failed: ${res.status}`);
+    process.stdout.write(`revoked: ${file}\n`);
     return;
   }
 

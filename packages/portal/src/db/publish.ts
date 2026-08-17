@@ -90,4 +90,17 @@ export class DrizzlePublisher implements Publisher {
 
     return { shareId };
   }
+
+  async revokeShare(shareId: string): Promise<{ recipient: string; workspace: string } | null> {
+    const share = (await this.db.select().from(shares).where(eq(shares.shareId, shareId)).limit(1))[0];
+    if (!share) return null;
+    // Idempotent: only stamp revokedAt the first time, but still report the recipient and
+    // workspace on a repeat call, so app.ts can always end the live session too.
+    if (!share.revokedAt) {
+      await this.db.update(shares).set({ revokedAt: new Date() }).where(eq(shares.shareId, shareId));
+    }
+    const art = (await this.db.select().from(artifacts).where(eq(artifacts.id, share.artifactId)).limit(1))[0];
+    if (!art) return null;
+    return { recipient: share.recipient, workspace: art.workspace };
+  }
 }
