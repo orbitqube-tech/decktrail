@@ -46,13 +46,25 @@ Then:
    git tag -a v0.2.0 -m "0.2.0: one command to install, one line to steer a deck"
    ```
 
-5. **Push the commit and the tag to both remotes.** The canonical repository and the public mirror
-   have to agree, because a version that exists in one and not the other is worse than no version.
+5. **Push the commit and the tag to both remotes, canonical first.** A version that exists in one
+   and not the other is worse than no version.
+
+   | Remote | Role | Where |
+   |---|---|---|
+   | `gitlab` | **Canonical.** Work happens here. | `gitlab.com/orbitqube/solutions/decktrail` |
+   | `origin` | **Public mirror.** Never branch, merge or commit against it. | `github.com/orbitqube-tech/decktrail` |
 
    ```sh
-   git push origin main && git push origin v0.2.0
    git push gitlab main && git push gitlab v0.2.0
+   git push origin main && git push origin v0.2.0
    ```
+
+   The order is the point. Two remotes with no stated roles become two sources of truth, and they
+   drift the first time a push reaches one and not the other, leaving nobody able to say which is
+   right. Push the canonical remote, confirm the commit actually landed there by reading the
+   remote rather than the exit code (`git ls-remote gitlab refs/heads/main`), and only then
+   mirror. If the mirror is ever wrong, fix it on the canonical remote and push again rather than
+   committing against the mirror.
 
 Pushes are sequential and human-paced. There is no continuous integration doing this, on purpose.
 
