@@ -1064,7 +1064,7 @@ the next one.
 Two rules hold the set together and both are enforced by a test rather than by intention.
 
 - **A layout names no colour.** Every value comes from a theme token. Layout and theme therefore
-  compose, so four layouts and three themes are twelve looks rather than four fixed pairings. A
+  compose, so four layouts and four themes are sixteen looks rather than four fixed pairings. A
   layout carrying its own palette would collapse that and would also put a second home under a
   value that already has one.
 - **A layout never touches slide visibility.** `.slide{display:none}` and
