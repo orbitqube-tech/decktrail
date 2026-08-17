@@ -19,6 +19,9 @@ export function Dashboard({ data }: { data: AnalyticsSummary }): React.ReactElem
           <Tile label="Deck opens" value={data.totalOpens} />
           <Tile label="Unique viewers" value={data.uniqueViewers} />
           <Tile label="Read to the end" value={data.completions} />
+          {/* Someone signed in and asked for a deck that was not theirs, or asked for one with
+              no invite at all. A forwarded link shows up here. */}
+          <Tile label="Refused" value={data.deniedCount} />
           <Tile label="Scrape attempts" value={data.botAttempts.length} alert />
         </div>
 

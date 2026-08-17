@@ -42,7 +42,8 @@ body {
 main { max-width: 1120px; margin: 0 auto; padding: 28px 32px 80px; }
 
 /* Signal tiles */
-.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 26px; }
+/* auto-fit rather than a fixed four, so adding a signal does not strand a row of empty cells. */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 26px; }
 .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
 .tile .k { color: var(--muted); font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; margin-bottom: 10px; }
 .tile .v { font-size: 34px; font-weight: 700; color: var(--heading); line-height: 1; }
