@@ -7,6 +7,7 @@ import { htmlDocument } from "./page.js";
 import { watermarkCss, watermarkLayer, antiCopyCss, antiCopyJs } from "./watermark.js";
 import { beaconConfigTag, beaconJs, type BeaconConfig } from "./beacon.js";
 import { logoCss, barMark } from "./logo.js";
+import { layoutCss } from "./layouts.js";
 
 export { logoCss, coverLogo, brandMark, barMark } from "./logo.js";
 export { beaconConfigTag, beaconJs, type BeaconConfig } from "./beacon.js";
@@ -15,6 +16,7 @@ export { themeToCss } from "./theme.js";
 export { fontFaceCss, fontSlug, clearFontCache } from "./font.js";
 export { renderSlide } from "./slides.js";
 export { shellCss, shellJs, renderMadeWith } from "./shell.js";
+export { layouts, layoutCss, layoutNames, isLayoutName, type LayoutName } from "./layouts.js";
 export { htmlDocument, type PageParts } from "./page.js";
 export { renderDocument, documentCss, type DocumentOptions } from "./document.js";
 export { renderTool, toolCss, type ToolOptions } from "./tool.js";
@@ -49,6 +51,13 @@ export interface StandaloneOptions {
    * here so that a render stays a function of its arguments.
    */
   fontCss?: string;
+  /**
+   * Which layout to wear, from `layouts.ts`. Omitted or unknown means the shell as it is, which
+   * is the default and is byte for byte what a deck rendered before layouts existed. A layout
+   * is appended after the shell and overrides it; it changes how the deck looks and never what
+   * it does.
+   */
+  layout?: string | null;
 }
 
 /**
@@ -72,6 +81,7 @@ export function renderStandalone(deck: Deck, theme: Theme, opts: StandaloneOptio
     (opts.fontCss ?? "") +
     themeToCss(theme) +
     shellCss +
+    layoutCss(opts.layout) +
     (theme.logo.src ? logoCss : "") +
     (opts.watermark ? watermarkCss(opts.watermark.opacity ?? 0.16) : "") +
     (opts.protect ? antiCopyCss : "");

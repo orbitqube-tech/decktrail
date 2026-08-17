@@ -53,14 +53,20 @@ Every deck is marked **"Private & Confidential"** unless you say otherwise, beca
 to a client is the overwhelmingly common case and should not need a flag. Use `--public` for a
 talk, a portfolio piece, or a marketing deck: anything meant to be handed around.
 
-### Themes
+### Themes and layouts
 
-**A theme is colour and type. It is not a layout.** Every theme renders through the same shell,
-so choosing one restyles a deck without moving anything on it. That is what lets you swap a
-theme after the deck is written, and it is also the honest limit of what a theme will do for
-you: it will not rearrange a slide.
+DeckTrail splits how a deck looks into two axes, and they compose.
 
-Three ship with DeckTrail, and naming no theme keeps the neutral default you already had.
+- **A theme is colour and type.** `--theme`.
+- **A layout is structure and treatment.** `--layout`.
+
+Naming neither gives you the deck you have always had. Naming both gives you the look those
+names were taken from. Mixing them is supported and is the point of keeping them apart: four
+layouts and three themes are twelve looks, not four fixed pairs.
+
+#### Themes
+
+Three ship, and naming no theme keeps the neutral default.
 
 | Name | What it looks like |
 |---|---|
@@ -68,14 +74,37 @@ Three ship with DeckTrail, and naming no theme keeps the neutral default you alr
 | `editorial` | Serif, on warm paper. Navy against rust. |
 | `vivid` | Warm and saturated, on cream. Blue and teal against pink and orange. |
 
-```sh
-decktrail render deck.json --theme editorial --out preview.html
-```
-
 Without `--theme`, `render` uses `theme.json` in the working directory if one is there, and the
 neutral theme otherwise. When you pass `--theme`, a path that exists always wins over a name, so
 a theme added here later can never quietly take over a file you already render with. Build your
 own with [`brand`](#brand-url---out-file), or write a `theme.json` by hand.
+
+#### Layouts
+
+Four ship, and naming no layout keeps the default shell.
+
+| Name | What it looks like |
+|---|---|
+| `crest` | Formal and squared. Bordered panels, no shadows, a dense table, a rule stamped across the top of every slide. |
+| `editorial` | A business magazine. Serif throughout, hairline rules instead of cards, pull quotes and pull figures. |
+| `storybook` | Warm and generous. Rounded cards, pill tags, soft shadows, a relaxed measure. |
+| `vivid` | Loud. Oversized headings and solid saturated colour blocks that alternate across a grid. |
+
+```sh
+decktrail render deck.json --layout editorial --out preview.html
+decktrail render deck.json --theme crest --layout crest --out preview.html
+```
+
+`--layout` applies to slide decks only. A document, a pricing tool and a hub have their own
+chrome and do not read the deck shell, so a layout there would be half applied rather than
+ignored, and is left off deliberately.
+
+Unlike `--theme`, `--layout` never takes a path, because a layout is code rather than data: it
+ships with the renderer. A name it does not know is an error that lists the names it does.
+
+Every layout uses your theme's colours and nothing of its own, which is why any layout works
+under any theme. No layout changes what a deck does: navigation, the jump menu, the progress
+bar, the watermark and the engagement beacon behave identically under all five.
 
 ---
 

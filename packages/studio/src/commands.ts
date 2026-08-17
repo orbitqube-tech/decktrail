@@ -39,6 +39,12 @@ export interface RenderOptions {
    * string to say something else.
    */
   confidentialLabel?: string | null;
+  /**
+   * Which layout a slide deck wears. Decks only: a document, a pricing tool and a hub have
+   * their own chrome and do not read the deck shell, so a layout would be silently ignored
+   * there rather than quietly half applied. Omitted means the default shell.
+   */
+  layout?: string | null;
 }
 
 /** Render an IR artifact (deck, document, tool, or pack) to standalone HTML. A local
@@ -54,7 +60,7 @@ export function runRender(input: unknown, theme: Theme = neutralTheme, opts: Ren
   // rule and the system face, exactly as before.
   const o = { ...label, fontCss: fontFaceCss(theme.typography.family) };
   const deck = Deck.safeParse(input);
-  if (deck.success) return renderStandalone(deck.data, theme, o);
+  if (deck.success) return renderStandalone(deck.data, theme, { ...o, layout: opts.layout });
   const doc = DocumentArtifact.safeParse(input);
   if (doc.success) return renderDocument(doc.data, theme, o);
   const tool = Tool.safeParse(input);

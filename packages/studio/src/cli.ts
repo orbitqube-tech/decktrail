@@ -5,6 +5,7 @@ import { generateDeck, createProvider, PROVIDER_IDS } from "@decktrail/generate"
 import { extract as extractDocument, type Extracted } from "@decktrail/ingest";
 import { runValidate, runRender } from "./commands.js";
 import { resolveTheme } from "./themes.js";
+import { isLayoutName, layoutNames } from "@decktrail/renderers";
 import { publishAndShare, fetchVoice } from "./push.js";
 import { fetchBrand } from "./brand.js";
 import { loadConfig, describeConfig, type ConfigFlags, type StudioConfig } from "./config.js";
@@ -14,14 +15,18 @@ function usage(): never {
   process.stdout.write(`decktrail <command>
 
   validate <file>                    Validate a DeckTrail IR JSON file.
-  render <file> [--out <file>] [--theme <file.json>|<name>] [--public | --confidential <text>]
+  render <file> [--out <file>] [--theme <file.json>|<name>] [--layout <name>]
+                [--public | --confidential <text>]
                                      Render an IR file to standalone HTML. Marked
                                      "Private & Confidential" unless --public drops the
                                      label or --confidential replaces its text. The brand
                                      comes from --theme, else theme.json here, else a
                                      neutral default. --theme takes a path or one of the
                                      themes that ship with DeckTrail: crest, editorial,
-                                     vivid. A theme sets colour and type, never layout.
+                                     vivid. A theme sets colour and type.
+                                     --layout sets the structure a deck wears: crest,
+                                     editorial, storybook, vivid. Decks only, and the two
+                                     compose, so any layout works under any theme.
   extract <file> [--out <file.md>] [--ocr auto|never|force] [--ocr-lang <code>]
                  [--ocr-tier auto|tiny|small|medium|server] [--ocr-model-path <dir>]
                                      Pull the text out of a PDF, a PowerPoint deck, a Word
@@ -195,7 +200,15 @@ async function main(): Promise<void> {
       read: (p) => readFileSync(p, "utf8"),
       parse: (v) => Theme.parse(v),
     });
-    const html = runRender(JSON.parse(readFileSync(file, "utf8")), theme, opts);
+    // --layout picks the shell a deck wears. Unlike --theme it never takes a path, because a
+    // layout is code rather than data: it ships with the renderer. An unknown name is caught
+    // here and named, rather than reaching the renderer, which returns the default for anything
+    // it does not recognise and would silently give you an unstyled deck for a typo.
+    const layout = flag(rest, "--layout");
+    if (layout && !isLayoutName(layout)) {
+      throw new Error(`No layout called ${layout}. Built in: ${layoutNames.join(", ")}.`);
+    }
+    const html = runRender(JSON.parse(readFileSync(file, "utf8")), theme, { ...opts, layout });
     const out = flag(rest, "--out");
     if (out) {
       writeFileSync(out, html);

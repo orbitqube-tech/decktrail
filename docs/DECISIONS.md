@@ -1047,3 +1047,38 @@ which is what makes a theme swappable after a deck is written.
 **How to reopen it:** an alternate layout is a renderer change, not a theme. It needs a shell
 variant and IR support for the blocks it introduces, and it should be argued for on what a reader
 gains, not on the existence of a stylesheet.
+
+## D32. Layouts ship, as CSS over one shell, and they compose with themes
+
+**Decision:** DeckTrail ships four layouts, `crest`, `editorial`, `storybook` and `vivid`, selected
+with `--layout <name>`. Naming none keeps the default shell exactly as it was. This supersedes
+D31, which recorded the opposite and set the terms for reopening it: an alternate layout is a
+renderer change, and it needs a shell variant. That is what this is.
+
+**A layout is CSS and nothing else.** It is appended after `shellCss` and overrides it. Every
+layout therefore renders the same markup and inherits the same behaviour: navigation, the jump
+menu, the progress bar, the per-viewer watermark and the engagement beacon all keep working
+without a layout knowing they exist. No IR change was needed, and none should be needed to add
+the next one.
+
+Two rules hold the set together and both are enforced by a test rather than by intention.
+
+- **A layout names no colour.** Every value comes from a theme token. Layout and theme therefore
+  compose, so four layouts and three themes are twelve looks rather than four fixed pairings. A
+  layout carrying its own palette would collapse that and would also put a second home under a
+  value that already has one.
+- **A layout never touches slide visibility.** `.slide{display:none}` and
+  `.slide.active{display:flex}` are how a deck shows one slide at a time. That is the deck
+  working, not the deck looking like something. A layout that overrode them would still
+  photograph perfectly well and would have broken navigation, which is exactly the kind of defect
+  that survives a screenshot review, so the test exists to catch what an eye would not.
+
+**On the naming overlap with themes.** `crest`, `editorial` and `vivid` name both a theme and a
+layout, and they are different things: the theme is the palette and the type, the layout is the
+structure. Wearing both gives the look those names were taken from. Mixing them is supported and
+is the point of keeping the two axes apart.
+
+**Why not reproduce the original stylesheets.** The four inherited files measured in D31 shared 9
+to 87 percent of their class names with the shell, and the two lowest expressed decoration over
+markup this renderer does not emit. Rebuilding that decoration against DeckTrail's own vocabulary
+gives the same four looks without carrying 388 KB of embedded fonts or a second markup contract.
