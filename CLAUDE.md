@@ -98,9 +98,10 @@ also pins the author to the maintainer, so **do not enable it on a fork**; see
 | `packages/portal` | Fastify, Drizzle, Postgres. Auth, the admin API, and serving gated decks. |
 | `packages/generate` | The generation engine: prompt, repair loop, and the model providers. A library: no filesystem, no argv, no portal, and it never reads the environment. It also makes no network call of its own, holds no credential and has no cost model, and D29 says why. |
 | `packages/ingest` | DeckTrail's thin surface over the shared `@orbitqube/oq-ai-ocr` library (D28). Bytes in, text out: PDF, PowerPoint, Word, and images, with OCR only when a document carries no text of its own. Re-authors, never converts (D4, D26). Runs on the author's machine, never the server. |
-| `packages/studio` | The `decktrail` CLI: validate, render, generate, push, brand, voice, config. Owns everything `generate` deliberately does not: argv, files, settings, the portal. |
+| `packages/studio` | The `decktrail` CLI: validate, render, generate, push, brand, voice, config. Owns everything `generate` deliberately does not: argv, files, settings, the portal. `themes.ts` holds the themes that ship by name, and the rule that a path always beats a name. |
 | `packages/console` | The owner's React dashboard, served at `/admin`. |
-| `scripts/` | `up.sh`, `up.ps1` and `up.bat` are the install, one command each. `up.bat` is a doorway to the PowerShell script rather than a third copy, and the one piece of shared logic, `wire-gateway.mjs`, is called by both so no platform can wire things differently. |
+| `scripts/` | `up.sh`, `up.ps1` and `up.bat` are the install, one command each. `up.bat` is a doorway to the PowerShell script rather than a third copy, and the one piece of shared logic, `wire-gateway.mjs`, is called by both so no platform can wire things differently. `graph.sh` rebuilds the knowledge graph, and prints what its own clean report hides. |
+| `decktrail-start.*` | Double-click launchers at the root, for people who do not use a terminal. Doorways to the scripts above: they anchor to their own directory and pass no port, because `.env` is the port's one home. |
 
 `docs/DECISIONS.md` holds every settled decision and supersedes anything that contradicts it,
 including this file. Read it before proposing a change to how something works: several
@@ -125,6 +126,13 @@ entry is hard to write because nothing user-visible changed, there is no release
   the database password, which has nowhere else to live, and deliberately leaves the token, session
   and admin secrets empty for the portal to create and persist itself. A secret with two homes is
   how a published admin token reached users once already.
+- **The knowledge graph in `graphify-out/` reads better than it is.** `GRAPH_REPORT.md` says
+  100% EXTRACTED and, a line later, a token cost of zero. Those two lines have to be read
+  together: on a corpus this full of prose, zero cost means no semantic lane was available, so
+  every node was parsed from structure rather than read. Every node carries an `ast` origin,
+  which is the same fact from the other side. The graph answers what the code imports and
+  contains; it does not answer what any of it means. It is generated, ignored, and rebuilt by
+  `scripts/graph.sh`.
 - **`scripts/wire-gateway.mjs` edits a file that is not ours.** It merges into your OpenCode
   configuration, keeps a backup, does nothing when the provider is already there, and refuses
   rather than guesses when the file carries comments a JSON parser would destroy. Anything else
