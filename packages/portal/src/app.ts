@@ -169,6 +169,18 @@ function extractArtifactMeta(ir: unknown): { workspace: string; slug: string; ki
   return null;
 }
 
+/**
+ * The scheme this portal reaches itself on, for any URL it builds and hands to a person.
+ *
+ * One home for it. It is taken from whether the session cookie is marked secure, because that is
+ * already the setting that says whether this deployment is served over TLS: a portal on plain HTTP
+ * cannot use a secure cookie, and one behind TLS must. Deriving it from a value that already has
+ * to be right beats adding a second setting that can disagree with the first.
+ */
+function selfScheme(config: { cookieSecure: boolean }): "https" | "http" {
+  return config.cookieSecure ? "https" : "http";
+}
+
 /** Build the portal HTTP app. Stores and side effects are injected, so it is fully testable. */
 export function buildApp(deps: AppDeps): FastifyInstance {
   const app = Fastify({ logger: false });
@@ -353,9 +365,8 @@ export function buildApp(deps: AppDeps): FastifyInstance {
         // Carry where they were going, so the link lands them on the deck rather than on a
         // bare "ok". safeNext refuses anything that is not a path on this portal.
         const next = safeNext((body as { next?: unknown }).next);
-        const scheme = config.cookieSecure ? "https" : "http";
         const url =
-          `${scheme}://${config.baseHost}/auth/claim?token=${encodeURIComponent(token)}` +
+          `${selfScheme(config)}://${config.baseHost}/auth/claim?token=${encodeURIComponent(token)}` +
           (next ? `&next=${encodeURIComponent(next)}` : "");
         await deps.sendMagicLink(email, url);
       } else if (email) {
@@ -514,7 +525,10 @@ export function buildApp(deps: AppDeps): FastifyInstance {
         .code(404)
         .send({ error: `no artifact with slug "${body.slug}" in workspace "${workspace}"` });
     }
-    return reply.code(201).send({ shareId: share.shareId, url: `https://${config.baseHost}/d/${share.shareId}` });
+    // Same scheme the magic link uses, derived rather than assumed. A portal serving over plain
+    // HTTP would otherwise hand the operator an https link to itself, which does not load, and
+    // that link is the one thing they copy and send to a client.
+    return reply.code(201).send({ shareId: share.shareId, url: `${selfScheme(config)}://${config.baseHost}/d/${share.shareId}` });
   });
 
   // Revoke a share. Same Bearer token as /admin/publish and /admin/shares above it,

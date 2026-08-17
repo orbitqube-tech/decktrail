@@ -559,7 +559,11 @@ describe("portal admin ingest", () => {
     });
     expect(res.statusCode).toBe(201);
     expect(res.json().shareId).toBe("shr_1");
-    expect(res.json().url).toContain("/d/shr_1");
+    // The WHOLE url, not just the path. This config has cookieSecure false, meaning a portal
+    // served over plain HTTP, so the link it hands the operator has to be http. Asserting only
+    // that the path contained "/d/shr_1" is what let an https link to an http portal survive:
+    // the operator copies this exact string and sends it to a client, and it did not load.
+    expect(res.json().url).toBe("http://localhost/d/shr_1");
   });
 
   it("revoking a share refuses a subsequent fetch of it", async () => {
