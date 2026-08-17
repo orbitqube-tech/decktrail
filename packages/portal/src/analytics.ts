@@ -27,7 +27,6 @@ export const EVENT = {
   downloadAttempt: "download_attempt",
   copyAttempt: "copy_attempt",
   printAttempt: "print_attempt",
-  devtoolsOpen: "devtools_open",
   tripwire: "tripwire",
 } as const;
 
@@ -38,7 +37,6 @@ export const BROWSER_EVENTS: ReadonlySet<string> = new Set([
   EVENT.downloadAttempt,
   EVENT.copyAttempt,
   EVENT.printAttempt,
-  EVENT.devtoolsOpen,
   EVENT.tripwire,
 ]);
 
@@ -170,12 +168,6 @@ export interface AnalyticsSummary {
   reading: ReadingStat[];
   /** How many times a reader reached the end of something. */
   completions: number;
-  /**
-   * How many times the devtools heuristic in beacon.ts fired. A signal, not a fact: the
-   * technique has its own false positives, documented at the detection site, so this counts
-   * a possible inspection rather than a proven one.
-   */
-  devtoolsOpens: number;
   /** How many times a reader tried to copy or cut text from the deck. */
   copyAttempts: number;
   /** How many times a reader tried to print the deck. */
@@ -394,7 +386,6 @@ export function summarize(events: EventRecord[]): AnalyticsSummary {
     bySlide,
     reading,
     completions: events.filter((e) => e.type === EVENT.deckComplete).length,
-    devtoolsOpens: events.filter((e) => e.type === EVENT.devtoolsOpen).length,
     copyAttempts: events.filter((e) => e.type === EVENT.copyAttempt).length,
     printAttempts: events.filter((e) => e.type === EVENT.printAttempt).length,
     downloadAttempts: events.filter((e) => e.type === EVENT.downloadAttempt).length,

@@ -83,7 +83,7 @@ Sound designs, worth building, currently absent. See `docs/THREAT-MODEL.md` for 
 | **Protection tiers** | Open / Tracked / Guarded / Vault is a design. Every deck is Tracked. There is no selector. |
 | **Revoking a share** | A share carries a `revoked_at` column and serving honours it, but nothing sets it: there is no route and no control. Sessions can be ended; a share cannot yet be withdrawn. |
 | **Emailing the share link** | `push --recipient` mints the link and lets that person sign in. **You still send the link yourself.** |
-| **Devtools detection** | Deferred on purpose: unreliable across browsers, and false positives are worse than nothing. |
+| **Devtools detection** | Not built, and it will not be. A page cannot observe the browser's own interface, and every technique reports a docked panel or a slow machine as an inspection. Measured, see `docs/DECISIONS.md` D33. |
 
 ---
 

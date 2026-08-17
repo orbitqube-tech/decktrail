@@ -1082,3 +1082,51 @@ is the point of keeping the two axes apart.
 to 87 percent of their class names with the shell, and the two lowest expressed decoration over
 markup this renderer does not emit. Rebuilding that decoration against DeckTrail's own vocabulary
 gives the same four looks without carrying 388 KB of embedded fonts or a second markup contract.
+## D33. There is no devtools detection, because it cannot be made to work
+
+**Decision:** DeckTrail does not attempt to detect that a reader has opened their browser's
+developer tools. There is no event for it, nothing sends one, and the dashboard shows no such
+number. Do not add one back without reading the measurement below and beating it.
+
+**It was built and then measured.** The most promising technique defines a getter on a property of
+an object the page logs, and infers that developer tools must be open if that getter runs, on the
+theory that only a rendering console reads it. Measured on a bare page carrying no product code,
+with both controls:
+
+| Arm | Getter evaluations |
+|---|---|
+| Developer tools closed, the negative control | 0 |
+| Developer tools **open** | **0** |
+| The page reading the property itself, the positive control | 1 |
+
+The positive control is what makes the middle row a result rather than a broken harness: the getter
+and its counter demonstrably work. Chrome does not evaluate accessor properties when it renders a
+logged object, because doing so would run arbitrary page code as a side effect of drawing a preview.
+It shows the getter collapsed and evaluates it only when a person clicks to expand that specific
+entry. So the condition being detected is not "developer tools are open", it is "a person opened the
+console, found this entry among one every second and a half, and expanded it".
+
+**The alternatives are worse, not different.** Comparing outer and inner window dimensions reports a
+docked panel, a zoomed page and a merely narrow window alike, and reports nothing at all when the
+panel is undocked into its own window. Timing a `debugger` statement reports any slow machine, any
+throttled background tab, and nothing at all when breakpoints are deactivated.
+
+**The structural reason, which is why this is a decision and not a to-do.** Developer tools are the
+browser's own interface, running above the page with more privilege than the page has. Every
+detection technique works by observing a side effect of that interface rendering something, and
+browsers have been steadily removing those side effects because pages were using them to obstruct
+debugging. A technique that works today is a leak, and leaks get closed. Building a product signal
+on one means shipping something that silently stops working.
+
+**And it would answer the wrong question anyway.** A reader can copy the entire document from the
+elements panel without ever opening the console. The routes this product already declines to defend
+against, a camera, a screenshot, retyping, leave no trace at all. See D5.
+
+**What is kept instead:** the signals that are actually observable, which are a copy, a cut, a
+print, a download attempt and a selection or right-click tripwire. Those are recorded because the
+browser tells the page about them directly, and each one is summarised and rendered, because an
+event nothing shows is data rather than a feature.
+
+**Consequence:** a permanently empty tile is worse than an absent one. It reads as a working
+measurement reporting good news, on a dashboard whose other numbers are deliberately conservative,
+in a product whose first rule is to check a capability exists before describing it.

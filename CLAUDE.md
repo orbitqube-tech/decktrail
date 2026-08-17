@@ -135,8 +135,12 @@ entry is hard to write because nothing user-visible changed, there is no release
   per slide dwell and completion for a long time while `summarize()` aggregated neither and the
   console rendered neither, so the website sold a capability the dashboard did not have. Adding
   an event type is half the work: if nothing summarises it and nothing renders it, the data
-  exists and the feature does not. `EVENT.devtoolsOpen` is currently in exactly that state, and
-  it is defined but never sent by `beacon.ts`.
+  exists and the feature does not. Every type in `EVENT` is sent by something, summarised by
+  `summarize()` and shown by the console, and adding one means doing all three or none. The
+  reverse also holds and is the harder discipline: **if a signal cannot actually be observed,
+  it does not get an event type at all**, because a tile permanently reading zero looks like a
+  working measurement reporting good news. D33 is the worked example, and it is the reason
+  there is no devtools detection here.
 - **Beacon numbers are viewer-supplied twice over.** `sanitizeMeta` bounds them on the way in and
   `summarize` bounds them again on the way out, because a number can arrive honestly and still
   describe something that did not happen. `MAX_CREDITED_DWELL_MS` exists because a deck left open

@@ -205,8 +205,7 @@ The event model:
 | `download_attempt` | recipient, deck, blocked or allowed |
 | `copy_attempt` | recipient, deck, slide |
 | `print_attempt` | recipient, deck |
-| `devtools_open` | **defined, never emitted.** Deferred: detection is unreliable and false-positives. A loose end, not a feature. See `THREAT-MODEL.md`. |
-| `tripwire` | recipient, deck, reason. The context-menu tripwire, which is built. **Not** the scrape tripwire in `THREAT-MODEL.md`, which is not. No event has an "action taken": nothing is auto-revoked. |
+| `tripwire` | recipient, deck, slide, and a `reason`: `contextmenu` or `selection`. Both are built. The selection one fires only once a selection actually exists, which on a protected deck means the stylesheet stopping selection has been defeated first. **Not** the scrape tripwire in `THREAT-MODEL.md`, which is not built. No event has an "action taken": nothing is auto-revoked. |
 | `bot_blocked` | user agent, ip |
 | `denied` | email, tenant |
 
@@ -253,8 +252,9 @@ content (never into a standalone file) reports `slide_view` (per slide, with dwe
 protection tripwires (`copy_attempt`, `print_attempt`, `download_attempt`, and a
 context-menu `tripwire`). It posts to `POST /e`, which takes the recipient and workspace
 from the session (not the body), whitelists the event type so a viewer cannot inject a
-server event, sanitises the meta, and is IP-rate-limited. `devtools_open` is deferred, since
-reliable detection is not worth the false positives.
+server event, sanitises the meta, and is IP-rate-limited. Every one of those is summarised by
+`summarize()` and rendered on the dashboard, because an event nothing shows is data rather than
+a feature. There is no devtools event: `DECISIONS.md` D33 records why, with the measurement.
 
 The React owner console (`packages/console`) renders all of this. It is a single-page app
 built with Vite and served by the portal at `/admin` (the built assets ship in the image and

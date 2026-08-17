@@ -92,11 +92,22 @@ There is no alerting of any kind. No forward alert, no tripwire alert, no email,
 Every signal in this product is passive: it lands in the events table and waits for the owner
 to open their dashboard. If you need to be told when something happens, poll the events export.
 
-### Devtools detection `NOT BUILT, AND DEFERRED ON PURPOSE`
+### Devtools detection `NOT BUILT, AND IT WILL NOT BE`
 
-The `devtools_open` event type exists in the code and nothing emits it. Detection is unreliable
-across browsers and produces false positives on ordinary readers, which is a poor trade for a
-signal that proves nothing. Treat the event type as reserved, not as a feature.
+There is no event for it, nothing sends one, and no number appears anywhere. This is settled, and
+the reasoning is measured rather than assumed: see `DECISIONS.md` D33.
+
+Briefly, a page cannot see the browser's own interface. Every technique infers developer tools
+from a side effect of that interface drawing something, and the side effects have been removed
+because pages were using them to obstruct debugging. The most promising one, a getter the console
+would evaluate while rendering a logged object, was measured firing **zero** times with developer
+tools open, because the console shows a getter collapsed and evaluates it only when a person clicks
+to expand. The rest report a docked panel, a zoomed window or a slow machine as though they were an
+inspection.
+
+It would also answer the wrong question. Someone can read the whole document from the elements
+panel without opening the console at all, and the routes below that this product declines to defend
+against leave no trace whatsoever.
 
 ---
 

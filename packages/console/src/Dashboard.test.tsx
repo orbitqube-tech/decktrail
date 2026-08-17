@@ -36,7 +36,6 @@ const summary: AnalyticsSummary = {
     { recipient: "bob@acme-logistics.com", artifactId: "deck-1", slidesViewed: 4, totalSlides: 9, completion: 44, dwellMs: 60000, finished: false },
   ],
   completions: 6,
-  devtoolsOpens: 2,
   copyAttempts: 4,
   printAttempts: 1,
   downloadAttempts: 0,
@@ -85,7 +84,6 @@ describe("Dashboard tiles", () => {
     expect(tileValue("Read to the end")).toBe("6");
     expect(tileValue("Refused")).toBe("3");
     expect(tileValue("Scrape attempts")).toBe("2");
-    expect(tileValue(/Devtools opened/)).toBe("2");
   });
 
   it("shows the viewer attempts tiles next to the value from the data", () => {

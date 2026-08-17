@@ -59,21 +59,6 @@ describe("summarize", () => {
   it("surfaces bot attempts as a first-class list", () => {
     expect(s.botAttempts).toEqual([{ ts: "2026-07-15T02:00:00.000Z", ip: "9.9.9.9", ua: "GPTBot/1.0" }]);
   });
-
-  it("counts no devtools opens when the beacon never sent one", () => {
-    expect(s.devtoolsOpens).toBe(0);
-  });
-});
-
-describe("summarize, the devtools signal", () => {
-  it("counts a devtools_open per event, the same way completions counts deck_complete", () => {
-    const events: EventRecord[] = [
-      ev({ type: EVENT.devtoolsOpen, ts: "2026-07-14T10:00:00Z", artifactId: "deck1", recipient: "priya@acme.example" }),
-      ev({ type: EVENT.devtoolsOpen, ts: "2026-07-15T09:00:00Z", artifactId: "deck1", recipient: "sam@acme.example" }),
-      ev({ type: EVENT.slideView, ts: "2026-07-14T10:01:00Z", artifactId: "deck1", recipient: "priya@acme.example", meta: { slideId: "cover", dwellMs: 1000 } }),
-    ];
-    expect(summarize(events).devtoolsOpens).toBe(2);
-  });
 });
 
 describe("summarize, the protection signals", () => {

@@ -52,7 +52,6 @@ export interface AnalyticsSummary {
   bySlide: SlideStat[];
   reading: ReadingStat[];
   completions: number;
-  devtoolsOpens: number;
   copyAttempts: number;
   printAttempts: number;
   downloadAttempts: number;
