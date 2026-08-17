@@ -126,6 +126,18 @@ entry is hard to write because nothing user-visible changed, there is no release
   the database password, which has nowhere else to live, and deliberately leaves the token, session
   and admin secrets empty for the portal to create and persist itself. A secret with two homes is
   how a published admin token reached users once already.
+- **`packages/portal/src/analytics.ts` is where a collected event becomes a shown number, and the
+  gap between those two is where this project has already misled itself.** The beacon collected
+  per slide dwell and completion for a long time while `summarize()` aggregated neither and the
+  console rendered neither, so the website sold a capability the dashboard did not have. Adding
+  an event type is half the work: if nothing summarises it and nothing renders it, the data
+  exists and the feature does not. `EVENT.devtoolsOpen` is currently in exactly that state, and
+  it is defined but never sent by `beacon.ts`.
+- **Beacon numbers are viewer-supplied twice over.** `sanitizeMeta` bounds them on the way in and
+  `summarize` bounds them again on the way out, because a number can arrive honestly and still
+  describe something that did not happen. `MAX_CREDITED_DWELL_MS` exists because a deck left open
+  in a tab over a weekend arrives as a single sixty hour reading, and the per slide column is a
+  median rather than a mean for the same reason. Widen either of those deliberately or not at all.
 - **The knowledge graph in `graphify-out/` reads better than it is.** `GRAPH_REPORT.md` says
   100% EXTRACTED and, a line later, a token cost of zero. Those two lines have to be read
   together: on a corpus this full of prose, zero cost means no semantic lane was available, so
