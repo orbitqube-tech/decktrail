@@ -169,9 +169,9 @@ package calls none.
 ## Recognised text can be wrong
 
 Read it before you use it. Recognition is never perfect, and the mistakes it makes are exactly the
-kind that survive a skim. A test line reading "Pilot fee is 18 lakh rupees" came back as "Pilotfee
-is I 8 lakh rupees". A model handed that will carry it into a slide without hesitating, and the
-slide will look fine.
+kind that survive a skim. It joins adjacent words and misreads digits, so a line reading "Discovery
+fee is 12 lakh rupees" can arrive as "Discoveryfee is I 2 lakh rupees". A model handed that will
+carry it into a slide without hesitating, and the slide will look fine.
 
 That is why `decktrail extract` exists, why every result naming recognised text carries a warning,
 and why `pages[].source` tells you which pages to distrust. Extract to a file, correct it, then

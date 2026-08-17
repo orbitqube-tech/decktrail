@@ -2,7 +2,7 @@
 
 Everyone who has signed the [DeckTrail Contributor Licence Agreement](CLA.md).
 
-Add yourself here in your first merge request, and add the
+Add yourself here in your first pull request, and add the
 `DeckTrail-CLA-1.0-signed-off-by:` trailer to your commits. See "How to sign" in `CLA.md`.
 
 ```

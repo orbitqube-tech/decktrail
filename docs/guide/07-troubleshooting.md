@@ -33,10 +33,10 @@ or force it with `--ocr force`. If the file genuinely holds no text and no legib
 nothing to build a deck from, and the command says so rather than writing an empty deck.
 
 **The text from my scan is wrong in places.**
-Expected, and why `extract` exists. Reading words off a picture is never perfect: a test line
-reading "Pilot fee is 18 lakh rupees" came back as "Pilotfee is I 8 lakh rupees". Extract to a file,
-correct it, then generate from the corrected file. A model will carry the mistake into a slide
-without hesitating.
+Expected, and why `extract` exists. Reading words off a picture is never perfect: it joins
+adjacent words and misreads digits, so "Discovery fee is 12 lakh rupees" can arrive as
+"Discoveryfee is I 2 lakh rupees". Extract to a file, correct it, then generate from the corrected
+file. A model will carry the mistake into a slide without hesitating.
 
 **Reading a scanned PDF fails asking for `@napi-rs/canvas`.**
 Turning PDF pages into images needs that package, which is optional because most people never

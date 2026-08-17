@@ -653,8 +653,9 @@ and an AGPL-only dependency would have to be relicensed from its vendor before t
 pdfjs is Apache-2.0 and leaves that option open.
 
 **Consequences:**
-- **OCR is honest about being imperfect.** A real scan of "Pilot fee is 18 lakh rupees" came back
-  as "Pilotfee is I 8 lakh rupees" in testing. Every OCR result carries a warning, and `extract`
+- **OCR is honest about being imperfect.** Recognition joins adjacent words and
+  misreads digits, so a line reading "Discovery fee is 12 lakh rupees" can arrive as
+  "Discoveryfee is I 2 lakh rupees". Every OCR result carries a warning, and `extract`
   exists so the author reads it before a model does.
 - **Nothing readable is a failure, not an empty success.** A deck of pictures with no text yields
   no deck, and says so, rather than producing an empty one.

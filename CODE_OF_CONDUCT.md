@@ -10,7 +10,7 @@ Disagreement is welcome and is most of how the project improves; contempt is not
 
 That covers almost everything. Concretely, and not exhaustively:
 
-- Harassment, insults, and personal attacks are not tolerated, in issues, merge requests, commit
+- Harassment, insults, and personal attacks are not tolerated, in issues, pull requests, commit
   messages, or anywhere else carrying the project's name.
 - Do not publish anyone's private information.
 - Keep it on topic. This is a tool for hosting documents, not a venue for anything else.

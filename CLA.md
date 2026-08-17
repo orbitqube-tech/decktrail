@@ -6,8 +6,8 @@
 > good sources, and it has **not been reviewed by a qualified lawyer**. It is
 > published in that state deliberately, because a project that quietly presents
 > an unreviewed instrument as settled is worse than one that says where it
-> stands. Until that review happens, DeckTrail accepts **issues but not merged
-> merge requests**, so nobody signs an agreement whose enforceability nobody has
+> stands. Until that review happens, DeckTrail accepts **issues, and does not
+> merge pull requests**, so nobody signs an agreement whose enforceability nobody has
 > checked. If you are considering contributing and this matters to you, it
 > should; take your own advice, and watch this notice for a change.
 
@@ -229,13 +229,13 @@ agreed to a provenance statement. We are not doing that.
 
 Instead:
 
-**1. Add your name to `CLA-SIGNATURES.md`** in your first merge request:
+**1. Add your name to `CLA-SIGNATURES.md`** in your first pull request:
 
 ```
 - Full Name <email@example.com>  signed DeckTrail CLA v1.0 on YYYY-MM-DD
 ```
 
-**2. Add this trailer to each commit** in that merge request and every one after:
+**2. Add this trailer to each commit** in that pull request and every one after:
 
 ```
 DeckTrail-CLA-1.0-signed-off-by: Your Name <your.email@example.com>

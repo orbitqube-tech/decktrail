@@ -78,11 +78,12 @@ decktrail extract last-years-proposal.pptx --out notes.md
 
 For a normal PDF or deck the extraction is exact, because the text is already text. A **scan or a
 photograph has no text in it**, so the words have to be read off the picture, and that reading is
-never perfect. In testing, a rendered line reading "Pilot fee is 18 lakh rupees" came back as
-"Pilotfee is I 8 lakh rupees". The model will faithfully carry a mistake like that into a slide, so
-read the extraction first and fix it. Reading pictures happens only when a document carries no text
-of its own; `--ocr never` turns it off entirely, and `--ocr force` uses it even over a text layer,
-for an export whose own text is worse than the page it sits on.
+never perfect. It joins adjacent words and misreads digits, so a line reading "Discovery fee is 12
+lakh rupees" can arrive as "Discoveryfee is I 2 lakh rupees". The model will faithfully carry a
+mistake like that into a slide, so read the extraction first and fix it. Reading pictures happens
+only when a document carries no text of its own; `--ocr never` turns it off entirely, and
+`--ocr force` uses it even over a text layer, for an export whose own text is worse than the page
+it sits on.
 
 Two things worth knowing about reading pictures: the engine downloads its language data the first
 time it runs, unless `DT_OCR_LANG_PATH` points at a local copy, and a scanned **PDF** additionally

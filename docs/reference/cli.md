@@ -376,9 +376,9 @@ path meets constantly.
 
 **Why this command exists.** A PDF or a deck carries its text inside it, so extraction is exact.
 A scan or a photograph does not, and the words have to be read off the picture, which is never
-perfect. In testing, a line reading "Pilot fee is 18 lakh rupees" came back as "Pilotfee is I 8
-lakh rupees". A model will carry a mistake like that into a slide without hesitating. Reading the
-extraction first is how you catch it.
+perfect. It joins adjacent words and misreads digits, so a line reading "Discovery fee is 12 lakh
+rupees" can arrive as "Discoveryfee is I 2 lakh rupees". A model will carry a mistake like that
+into a slide without hesitating. Reading the extraction first is how you catch it.
 
 Reading pictures runs only when a document carries no text of its own. `--ocr never` turns it off,
 and `--ocr force` uses it even over a text layer, for an export whose own text is worse than the

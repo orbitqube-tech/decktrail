@@ -56,8 +56,8 @@ docker compose up -d db
 
 **Run these before touching the database layer.** They cover things a fake cannot: the atomic
 single-use claim on a magic link is a `DELETE ... RETURNING`, and either the database does it
-atomically or link replay works. While they were skipping, one of them had been failing since
-a refactor and nobody knew.
+atomically or link replay works. Note that they skip themselves without a database, so a green
+run means nothing until you have checked the count.
 
 And there is the whole journey, in a real browser, from an empty database to a client reading
 a watermarked deck:
@@ -68,10 +68,10 @@ DT_E2E_IR=path/to/deck.ir.json ./scripts/e2e.sh --headless # for CI
 ```
 
 It wipes the stack, because the journey starts at first boot. **Run it before any release.**
-Every failure it has caught was invisible to the unit suite and obvious to a person: a portal
-whose root URL answered a raw 404 the moment setup finished, a client meeting
-`{"error":"please sign in"}` with nowhere to sign in, and a magic link that answered
-`{"ok":true}` and left you staring at it. The suite was green for all three.
+It exists to catch the class of failure the unit suite cannot see and a person cannot miss: a
+route that answers correct JSON to a browser expecting a page, a step in the sign-in flow that
+leaves the visitor with nowhere to go next, a portal that boots but cannot actually deliver a
+deck to a human. A green suite is not evidence against any of those.
 
 ## How we work
 
@@ -93,7 +93,7 @@ DeckTrail by OrbitQube" attribution, see `ATTRIBUTION.md` for the request proces
 ## License of contributions
 
 DeckTrail asks contributors to sign a Contributor Licence Agreement (`CLA.md`). Add yourself to
-`CLA-SIGNATURES.md` in your first merge request, and add a `DeckTrail-CLA-1.0-signed-off-by:`
+`CLA-SIGNATURES.md` in your first pull request, and add a `DeckTrail-CLA-1.0-signed-off-by:`
 trailer to your commits. Note this is **not** `git commit -s`: that trailer means the Developer
 Certificate of Origin, which is a different document, and we are not going to redefine it
 quietly to mean something with a commercial grant in it.

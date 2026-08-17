@@ -118,7 +118,7 @@ The mechanism is the same as the individual agreement, and it is a file in the
 repository rather than a third-party service, so the record travels with the
 code and can be checked by anyone against the git history.
 
-**1. Open a merge request** adding your entity to
+**1. Open a pull request** adding your entity to
 [`CLA-SIGNATURES.md`](CLA-SIGNATURES.md) under the corporate section, in this
 form:
 
@@ -130,7 +130,7 @@ form:
 ```
 
 **2. Send the signed agreement.** Because this binds a company rather than a
-person, a merge request alone is not enough: email a copy naming the authorised
+person, a pull request alone is not enough: email a copy naming the authorised
 signatory to the address in [`CLA.md`](CLA.md), from a domain the company
 controls. We will acknowledge it in writing, and only then is it in force.
 
