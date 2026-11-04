@@ -3,6 +3,14 @@
 Notes for anyone working on DeckTrail, human or otherwise. Read `README.md` first, then
 `docs/README.md`, which indexes everything else.
 
+## SECURITY FLOOR, 2026-11-03 (act on it at the next build or deploy)
+
+- The live runtime was moved to Node 24.22.2 (CVE-2026-111497 and three other High issues; floors 22.23.4 / 24.22.1 / 26.12.1).
+- Commit `8462dd8`, merged into `main` as `cd22d72`, adds a SECURITY FLOOR step to the runtime stage of the `Dockerfile`: the build **fails** if Node is below 24.22.1, instead of silently shipping a stale cached base.
+- **The next deploy must build from `main` at or after `cd22d72`, with `--pull`.** If the floor step fails, run `docker pull` on the base image; the code is not broken.
+- Local `main` in other checkouts may hold unpushed commits that predate this; rebase them onto `gitlab/main` before pushing.
+- Delete this section once a deploy from such a build is verified live.
+
 ## What this is
 
 An open source, self-hosted product that lets a freelancer or consultant send a client a
