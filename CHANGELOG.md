@@ -9,6 +9,22 @@ come back to. Before 1.0 the minor number carries features and the patch number 
 
 Dates are the day the tag was pushed.
 
+## Unreleased
+
+### Writing a deck
+
+- **`generate --faithful` ports an approved document instead of re-authoring it.** Generation
+  re-authors by default, which suits notes and does not suit a document that has already been
+  approved and sent: on a real corpus the default turned a 25-slide proposal into 17 slides and cut
+  long documents to a third of their length. With `--faithful` the same corpus kept every slide,
+  in order, and every figure.
+- **`generate --assets <dir>` carries images into the deck.** Screenshots and photos used to be
+  dropped, because a model cannot draw them and was rightly told never to invent a path. Now the
+  model is given each image's name and alt text (from an optional `assets.json`), places it on an
+  `image` slide by reference, and DeckTrail puts the image itself in after validation. The bytes
+  never pass through the model, and a reference to an image that was not supplied goes back for
+  repair rather than into the deck.
+
 ## 0.3.0 (2026-08-17)
 
 The release that lets an owner act on a share and see what a viewer actually did to a protected

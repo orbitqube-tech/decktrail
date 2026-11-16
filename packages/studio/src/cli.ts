@@ -10,6 +10,7 @@ import { publishAndShare, fetchVoice } from "./push.js";
 import { fetchBrand } from "./brand.js";
 import { loadConfig, describeConfig, type ConfigFlags, type StudioConfig } from "./config.js";
 import { resolveVoice, describeVoiceOrigin, writeVoiceCache, voiceCachePath } from "./voice.js";
+import { loadAssets, ASSET_WARN_BYTES } from "./assets.js";
 
 function usage(): never {
   process.stdout.write(`decktrail <command>
@@ -43,6 +44,7 @@ function usage(): never {
                      [--voice <file.json>] [--voice-md <file.md>]
                      [--provider <${PROVIDER_IDS.join("|")}>] [--model <provider/model>] [--command <bin>]
                      [--portal <url>] [--token <token>] [--ocr auto|never|force]
+                     [--faithful] [--assets <dir>]
                                      Generate a deck IR from a content file, then validate it.
                                      The content can be prose, or any file "extract" understands:
                                      a PDF, a deck, a document, or a scan. Nothing is converted,
@@ -57,7 +59,11 @@ function usage(): never {
                                      whichever voice wins. The voice comes from --voice, else
                                      voice.json here, else the voice you set in the console, else
                                      its local cache when the portal is unreachable, else a
-                                     neutral default.
+                                     neutral default. --faithful ports an approved document as
+                                     it stands: every slide, in order, with its words and figures,
+                                     rather than re-authoring it. --assets <dir> supplies images
+                                     (png, jpg, gif, webp, svg) the deck may show, with optional
+                                     alt text in <dir>/assets.json as { "file": "what it shows" }.
   push <file> [--portal <url>] [--token <token>] [--recipient <email>] [--theme <file>]
                                      Publish an IR file to a portal, and optionally share it.
   revoke <shareId> [--portal <url>] [--token <token>]
@@ -314,8 +320,24 @@ async function main(): Promise<void> {
       process.exit(1);
     }
 
+    // --faithful ports an approved document as it stands; without it, generation re-authors.
+    const faithful = rest.includes("--faithful");
+    if (faithful) warn("faithful port: every slide kept, in order, with its words and figures");
+    // --assets supplies images the model may place by name. Their bytes go into the deck after
+    // validation and never through the model.
+    const assetsDir = flag(rest, "--assets");
+    const loaded = assetsDir ? loadAssets(assetsDir) : undefined;
+    if (loaded) {
+      warn(`${loaded.assets.length} image(s) supplied from ${assetsDir}, ${(loaded.totalBytes / 1048576).toFixed(1)} MB`);
+      if (loaded.skipped.length) warn(`  note: skipped ${loaded.skipped.join(", ")}: not an image type a deck can carry`);
+      if (loaded.totalBytes > ASSET_WARN_BYTES)
+        warn("  note: every reader downloads these on every open; consider smaller images");
+    }
+
     const deck = await generateDeck(source.text, resolved.voice, flag(rest, "--client"), {
       provider,
+      faithful,
+      assets: loaded?.assets,
       repairAttempts: config.generate.repairAttempts.value,
       // Repair is another slow model call, so say it is happening rather than appear to hang.
       onRetry: (attempt) =>

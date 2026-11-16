@@ -1,10 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { Voice, Tone, State } from "@decktrail/ir";
+import { Voice, Tone, State, Deck } from "@decktrail/ir";
 import {
   generateDeck,
   extractJson,
   buildGeneratePrompt,
   DEFAULT_VOICE_BLOCK,
+  FAITHFUL_BLOCK,
+  ASSET_REF_PREFIX,
+  resolveAssetRefs,
   createProvider,
   createClaudeProvider,
   createOpenCodeProvider,
@@ -299,5 +302,92 @@ describe("what the generator is told it can build", () => {
     // generated through a subscription are asked for in identical words, so the only variable
     // is the model itself.
     expect(buildGeneratePrompt("content")).toBe(buildGeneratePrompt("content"));
+  });
+});
+
+describe("porting an approved document faithfully", () => {
+  // Generation re-authors by default, which is right for notes and wrong for a document that has
+  // already been approved and sent. Measured on a real corpus, the default cut a 25-slide proposal
+  // to 17 slides; asked to port faithfully, the same corpus kept its slides, order and figures.
+  it("leaves the faithful block out unless asked", () => {
+    expect(buildGeneratePrompt("content")).not.toContain(FAITHFUL_BLOCK);
+  });
+
+  it("asks for every slide, in order, with every figure, when asked", () => {
+    const p = buildGeneratePrompt("content", undefined, { faithful: true });
+    expect(p).toContain(FAITHFUL_BLOCK);
+    expect(p).toMatch(/Do not merge,\s+drop, reorder or summarise/);
+    expect(p).toContain("every sentence, figure, table row and name");
+  });
+
+  it("passes the faithful flag from generateDeck into the prompt", async () => {
+    const seen: string[] = [];
+    const good = {
+      id: "d1", title: "T", slug: "t", workspace: "acme", kind: "slide-deck",
+      slides: [{ id: "s1", layout: "bullets", heading: "H", items: ["a"] }],
+    };
+    await generateDeck("content", undefined, undefined, {
+      provider: providerOf(async (p) => (seen.push(p), JSON.stringify(good))),
+      faithful: true,
+    });
+    expect(seen[0]).toContain(FAITHFUL_BLOCK);
+  });
+});
+
+describe("images supplied with the content", () => {
+  const png = "data:image/png;base64,iVBORw0KGgo=";
+  const deckWith = (asset: string) => ({
+    id: "d1", title: "T", slug: "t", workspace: "acme", kind: "slide-deck",
+    slides: [
+      { id: "s1", layout: "bullets", heading: "Sign in", items: ["Phone and a one-time code"] },
+      { id: "s2", layout: "image", asset, alt: "Sign in screen" },
+    ],
+  });
+
+  it("lists the images by name and alt text, and never their bytes", () => {
+    const p = buildGeneratePrompt("content", undefined, { assets: [{ name: "signin.png", alt: "Sign in screen" }] });
+    expect(p).toContain(`${ASSET_REF_PREFIX}signin.png: Sign in screen`);
+    expect(p).not.toContain("base64");
+  });
+
+  it("puts the image into the deck after validation", async () => {
+    const seen: string[] = [];
+    const deck = await generateDeck("content", undefined, undefined, {
+      provider: providerOf(async (p) => (seen.push(p), JSON.stringify(deckWith("asset:signin.png")))),
+      assets: [{ name: "signin.png", alt: "Sign in screen", src: png }],
+    });
+    const slide = deck.slides[1];
+    expect(slide.layout === "image" && slide.asset).toBe(png);
+    // The bytes went into the deck, not through the model.
+    expect(seen.join("")).not.toContain("iVBORw0KGgo");
+  });
+
+  it("sends an unknown image name back for repair rather than shipping it", async () => {
+    const seen: string[] = [];
+    const provider = providerOf(async (p) => {
+      seen.push(p);
+      return JSON.stringify(deckWith(seen.length === 1 ? "asset:invented.png" : "asset:signin.png"));
+    });
+    const deck = await generateDeck("content", undefined, undefined, {
+      provider,
+      assets: [{ name: "signin.png", src: png }],
+    });
+    expect(seen).toHaveLength(2);
+    expect(seen[1]).toContain("asset:invented.png");
+    expect(seen[1]).toContain("asset:signin.png");
+    const slide = deck.slides[1];
+    expect(slide.layout === "image" && slide.asset).toBe(png);
+  });
+
+  it("refuses an asset reference when no images were supplied at all", () => {
+    const deck = Deck.parse(deckWith("asset:anything.png"));
+    expect(resolveAssetRefs(deck, [])).toEqual([expect.stringContaining("none were supplied")]);
+  });
+
+  it("leaves a plain URL asset alone", () => {
+    const deck = Deck.parse(deckWith("https://example.com/a.png"));
+    expect(resolveAssetRefs(deck, [])).toEqual([]);
+    const slide = deck.slides[1];
+    expect(slide.layout === "image" && slide.asset).toBe("https://example.com/a.png");
   });
 });

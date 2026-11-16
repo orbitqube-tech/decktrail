@@ -24,6 +24,45 @@ export function renderVoice(voice: Voice): string {
   return parts.join("\n");
 }
 
+/** An image the author supplied, as the prompt sees it: a name and what it shows. Never the bytes. */
+export interface PromptAsset {
+  name: string;
+  alt?: string;
+}
+
+/** The prefix an asset reference carries in generated IR, before it is resolved to the image. */
+export const ASSET_REF_PREFIX = "asset:";
+
+/**
+ * The faithful-port block. Generation re-authors by default (D4), which is right for notes and
+ * wrong for a document that has already been approved and sent: measured on a real corpus, the
+ * default turned a 25-slide proposal into 17 slides and cut long documents to a third of their
+ * length. With this block the same corpus kept its slide count, its order and every figure.
+ */
+export const FAITHFUL_BLOCK = `This is a FAITHFUL PORT of an existing, approved document, not a rewrite.
+- Keep every slide or section of the source as its own slide, in the source's order. Do not merge,
+  drop, reorder or summarise any of them, and do not add slides the source does not have.
+- Carry every sentence, figure, table row and name across. Change wording only where a layout's
+  slots force it, and then as little as possible.
+- Where the source has a picture you cannot reproduce, keep its words and describe it in "notes".
+- The voice below governs only what you must write yourself; it never licenses rewording the source.`;
+
+/** Tell the model which images exist and how to place them, by name only. */
+export function renderAssets(assets: readonly PromptAsset[]): string {
+  const lines = assets.map((a) => `- ${ASSET_REF_PREFIX}${a.name}${a.alt ? `: ${a.alt.replace(/\s+/g, " ").trim()}` : ""}`);
+  return `These images were supplied with the content. Place each one where the content refers to it,
+as an "image" slide whose "asset" is exactly the reference below, with "alt" describing it and an
+optional "caption". Use only these references, each at most once, and never any other asset:
+${lines.join("\n")}`;
+}
+
+export interface PromptOptions {
+  /** Port the content as it stands rather than re-author it. */
+  faithful?: boolean;
+  /** Images the model may place, by name. */
+  assets?: readonly PromptAsset[];
+}
+
 /**
  * Build the generation prompt handed to the model. The IR shape is fixed (it is the schema); the
  * voice block is configurable per author, falling back to the neutral default.
@@ -32,8 +71,10 @@ export function renderVoice(voice: Voice): string {
  * than inside a provider: a deck generated locally and a deck generated through a subscription
  * are asked for in identical words, so the only variable is the model.
  */
-export function buildGeneratePrompt(content: string, voice?: Voice): string {
+export function buildGeneratePrompt(content: string, voice?: Voice, opts: PromptOptions = {}): string {
   const voiceBlock = voice ? renderVoice(voice) : DEFAULT_VOICE_BLOCK;
+  const faithfulBlock = opts.faithful ? `\n${FAITHFUL_BLOCK}\n` : "";
+  const assetsBlock = opts.assets && opts.assets.length > 0 ? `\n${renderAssets(opts.assets)}\n` : "";
   return `Generate a DeckTrail slide deck. Output ONLY a single JSON object that is a valid
 DeckTrail slide-deck intermediate representation. No prose, no markdown code fences.
 
@@ -91,7 +132,7 @@ A slide is { "id": string, "layout": <name>, ...slots }. Layouts and slots:
 
 Two escape hatches. Reach for them only when a real layout above genuinely cannot carry the
 content, because a layout is reskinnable and these are not:
-- image: asset (a URL or path, never invented), alt, caption?
+- image: asset (a URL or path, or a supplied "asset:" reference; never invented), alt, caption?
 - figure: svg?, caption?. SVG only, and only a plain drawing: no <style>, no script, no event
   handlers, no href. Styled HTML does NOT survive here. Never invent an asset path or an image
   that was not given to you; if the source has a diagram you cannot express, use a layout above
@@ -114,7 +155,7 @@ Rich text must say something: never an empty string and never an empty array. A 
 nothing to say is left out.
 
 ${voiceBlock}
-
+${faithfulBlock}${assetsBlock}
 Turn this content into a deck:
 ---
 ${content}

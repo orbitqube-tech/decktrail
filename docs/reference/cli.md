@@ -113,7 +113,7 @@ bar, the watermark and the engagement beacon behave identically under all five.
 
 ---
 
-## `generate <content> [--out <file>] [--client <name>] [--voice ...] [--portal ... --token ...]`
+## `generate <content> [--out <file>] [--client <name>] [--faithful] [--assets <dir>] [--voice ...] [--portal ... --token ...]`
 
 Write a deck from your notes, or from a document you already have. It runs on your machine, and
 your content never reaches the portal or us.
@@ -132,6 +132,8 @@ come across and the original's layout does not. Run `extract` first to see what 
 |---|---|
 | `--out <file>` | Where to write the IR. Default `deck.json`. |
 | `--client <name>` | **Who the deck is for.** Sets the workspace, which groups your decks in the console. |
+| `--faithful` | **Port, do not re-author.** For a document that already exists and has been approved: every slide or section kept as its own slide, in order, with its words, figures and names. Without it, generation writes a new deck from the content, which is what you want for notes and not what you want for something a client has already read. |
+| `--assets <dir>` | Images the deck may show: png, jpg, gif, webp or svg. The model sees each file's name and, from an optional `<dir>/assets.json` (`{ "signin.png": "Sign in screen" }`), what it shows, and places it on an `image` slide. The image itself goes into the deck afterwards, inline, so it never passes through the model and the deck stays one self-contained file. A reference to an image you did not supply is sent back for repair. |
 | `--prompt <text>` | One line of guidance for this deck alone, for example `--prompt "lead with the cost and keep it to six slides"`. Folded into whichever voice wins, after `--voice-md`, because an instruction you typed for one run is more specific than one you keep in a file. |
 | `--voice <file.json>` | A voice file to write in. |
 | `--voice-md <file.md>` | Free-form guidance you keep, folded into the voice's instructions. |

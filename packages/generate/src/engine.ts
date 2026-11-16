@@ -1,6 +1,42 @@
 import { Deck, type Voice } from "@decktrail/ir";
-import { buildGeneratePrompt, buildRepairPrompt } from "./prompt.js";
+import { ASSET_REF_PREFIX, buildGeneratePrompt, buildRepairPrompt } from "./prompt.js";
 import type { GenerationProvider } from "./provider.js";
+
+/**
+ * An image supplied with the content. The model only ever sees `name` and `alt`; `src` (a data:
+ * URI or a URL) is put into the deck after validation, so a screenshot's bytes never pass through
+ * the model, cannot be altered by it, and do not cost a token.
+ */
+export interface GenerateAsset {
+  name: string;
+  alt?: string;
+  src: string;
+}
+
+/**
+ * Check every "asset:" reference in a deck against the supplied images, and replace each with the
+ * image itself. Returns the problems instead of throwing, so an unknown name goes back to the
+ * model as a repair rather than failing the run. Exported for tests.
+ */
+export function resolveAssetRefs(deck: Deck, assets: readonly GenerateAsset[]): string[] {
+  const byName = new Map(assets.map((a) => [a.name, a]));
+  const problems: string[] = [];
+  deck.slides.forEach((slide, i) => {
+    if (slide.layout !== "image" || !slide.asset.startsWith(ASSET_REF_PREFIX)) return;
+    const name = slide.asset.slice(ASSET_REF_PREFIX.length);
+    const found = byName.get(name);
+    if (!found) {
+      problems.push(
+        `slides[${i}].asset is "${slide.asset}", which was not supplied. Use one of: ${
+          assets.map((a) => ASSET_REF_PREFIX + a.name).join(", ") || "(none were supplied; remove this slide)"
+        }`,
+      );
+      return;
+    }
+    slide.asset = found.src;
+  });
+  return problems;
+}
 
 /** Extract the first complete JSON object from arbitrary model output. */
 export function extractJson(text: string): unknown {
@@ -28,6 +64,10 @@ export interface GenerateOptions {
   signal?: AbortSignal;
   /** Each chunk the backend writes to stderr, so a caller can surface its progress. */
   onStderr?: (chunk: string) => void;
+  /** Port the content as it stands rather than re-author it. See FAITHFUL_BLOCK. */
+  faithful?: boolean;
+  /** Images the model may place by name. Resolved into the deck after validation. */
+  assets?: readonly GenerateAsset[];
 }
 
 /**
@@ -62,10 +102,20 @@ export async function generateDeck(
       return { ok: false, errors: `The output is not valid JSON: ${e instanceof Error ? e.message : String(e)}` };
     }
     const parsed = Deck.safeParse(json);
-    return parsed.success ? { ok: true, deck: parsed.data } : { ok: false, errors: JSON.stringify(parsed.error.issues, null, 2) };
+    if (!parsed.success) return { ok: false, errors: JSON.stringify(parsed.error.issues, null, 2) };
+    // A reference to an image nobody supplied is a wrong field like any other, and goes back for
+    // repair. Checked on every deck, assets or not, so an invented "asset:" never reaches a reader.
+    const problems = resolveAssetRefs(parsed.data, assets);
+    return problems.length ? { ok: false, errors: problems.join("\n") } : { ok: true, deck: parsed.data };
   };
 
-  let raw = await run(buildGeneratePrompt(content, voice));
+  const assets = opts.assets ?? [];
+  let raw = await run(
+    buildGeneratePrompt(content, voice, {
+      faithful: opts.faithful,
+      assets: assets.map(({ name, alt }) => ({ name, alt })),
+    }),
+  );
   let result = check(raw);
 
   for (let attempt = 1; !result.ok && attempt <= attempts; attempt++) {
