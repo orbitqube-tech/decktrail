@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, existsSync, statSync } from "node:fs";
 import { join, extname } from "node:path";
 import type { GenerateAsset } from "@decktrail/generate";
+import { DEFAULT_PUBLISH_MAX_BYTES } from "@decktrail/ir";
 
 /** The image types a deck can carry inline. Anything else in the folder is skipped, and said so. */
 const MIME: Record<string, string> = {
@@ -16,10 +17,10 @@ const MIME: Record<string, string> = {
 export const ASSET_MANIFEST = "assets.json";
 
 /**
- * Above this, a deck is heavy enough that every reader downloads it on every open. Not refused,
- * because a screenshot walkthrough is legitimately large, but said out loud.
+ * Above this the images alone would take a deck past what a portal accepts on publish by default
+ * (base64 adds a third), so the CLI says so before the push fails rather than after.
  */
-export const ASSET_WARN_BYTES = 8 * 1024 * 1024;
+export const ASSET_WARN_BYTES = Math.floor((DEFAULT_PUBLISH_MAX_BYTES * 3) / 4);
 
 export interface LoadedAssets {
   assets: GenerateAsset[];
@@ -36,14 +37,24 @@ export interface LoadedAssets {
 export function loadAssets(dir: string): LoadedAssets {
   if (!existsSync(dir) || !statSync(dir).isDirectory()) throw new Error(`--assets ${dir} is not a folder`);
   const manifestPath = join(dir, ASSET_MANIFEST);
-  const alts: Record<string, unknown> = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, "utf8")) : {};
+  let alts: Record<string, unknown> = {};
+  if (existsSync(manifestPath)) {
+    try {
+      alts = JSON.parse(readFileSync(manifestPath, "utf8"));
+    } catch (e) {
+      throw new Error(`${manifestPath} is not valid JSON: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
   const assets: GenerateAsset[] = [];
   const skipped: string[] = [];
   let totalBytes = 0;
   for (const file of readdirSync(dir).sort()) {
     if (file === ASSET_MANIFEST) continue;
     const mime = MIME[extname(file).toLowerCase()];
-    if (!mime) {
+    // A name with a control character in it would read as more than one line in the prompt, and a
+    // folder named like an image is not one.
+    // eslint-disable-next-line no-control-regex
+    if (!mime || /[\u0000-\u001f\u007f]/.test(file) || !statSync(join(dir, file)).isFile()) {
       skipped.push(file);
       continue;
     }

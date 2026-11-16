@@ -21,6 +21,7 @@ export interface GenerateAsset {
 export function resolveAssetRefs(deck: Deck, assets: readonly GenerateAsset[]): string[] {
   const byName = new Map(assets.map((a) => [a.name, a]));
   const problems: string[] = [];
+  const seen = new Map<string, number>();
   deck.slides.forEach((slide, i) => {
     if (slide.layout !== "image" || !slide.asset.startsWith(ASSET_REF_PREFIX)) return;
     const name = slide.asset.slice(ASSET_REF_PREFIX.length);
@@ -33,6 +34,13 @@ export function resolveAssetRefs(deck: Deck, assets: readonly GenerateAsset[]): 
       );
       return;
     }
+    // Each image once: every copy embeds the whole image again, and a deck is downloaded whole.
+    const first = seen.get(name);
+    if (first !== undefined) {
+      problems.push(`slides[${i}].asset repeats "${slide.asset}", already used on slides[${first}]. Use each image once.`);
+      return;
+    }
+    seen.set(name, i);
     slide.asset = found.src;
   });
   return problems;

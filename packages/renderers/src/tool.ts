@@ -61,7 +61,7 @@ body.editing .editbar{display:flex}
 /* The hint makes presenter mode discoverable when the sender opens the sheet, then fades, so
    that nothing on screen suggests the numbers are editable while a client is looking at it. It
    sits one line above the made-with mark, which holds the same corner and was drawn through it. */
-.pthint{position:fixed;bottom:36px;left:26px;z-index:19;color:var(--muted);font-size:11px;letter-spacing:1px;animation:pthintfade 1s ease 4s forwards}
+.pthint{position:fixed;bottom:46px;left:26px;z-index:19;color:var(--muted);font-size:11px;letter-spacing:1px;animation:pthintfade 1s ease 4s forwards}
 body.editing .pthint{display:none}
 @keyframes pthintfade{to{opacity:0;visibility:hidden}}
 `;

@@ -4,6 +4,7 @@ import {
   generateDeck,
   extractJson,
   buildGeneratePrompt,
+  buildRepairPrompt,
   DEFAULT_VOICE_BLOCK,
   FAITHFUL_BLOCK,
   ASSET_REF_PREFIX,
@@ -389,5 +390,31 @@ describe("images supplied with the content", () => {
     expect(resolveAssetRefs(deck, [])).toEqual([]);
     const slide = deck.slides[1];
     expect(slide.layout === "image" && slide.asset).toBe("https://example.com/a.png");
+  });
+});
+
+describe("asset references the model gets wrong", () => {
+  const png = "data:image/png;base64,iVBORw0KGgo=";
+  const twice = {
+    id: "d1", title: "T", slug: "t", workspace: "acme", kind: "slide-deck",
+    slides: [
+      { id: "s1", layout: "image", asset: "asset:a.png", alt: "A" },
+      { id: "s2", layout: "image", asset: "asset:a.png", alt: "A again" },
+    ],
+  };
+
+  it("refuses the same image twice, because each copy embeds it again", () => {
+    const deck = Deck.parse(twice);
+    expect(resolveAssetRefs(deck, [{ name: "a.png", src: png }])).toEqual([expect.stringContaining("Use each image once")]);
+  });
+
+  it("lets the repair drop or repoint an unknown image, rather than forbid the only fix", () => {
+    const p = buildRepairPrompt("{}", "slides[1].asset is \"asset:x.png\", which was not supplied");
+    expect(p).toContain("may be pointed at a supplied reference, or removed");
+  });
+
+  it("keeps a file name on one line in the prompt", () => {
+    const p = buildGeneratePrompt("c", undefined, { assets: [{ name: "a\nb.png" }] });
+    expect(p).toContain(`${ASSET_REF_PREFIX}a b.png`);
   });
 });

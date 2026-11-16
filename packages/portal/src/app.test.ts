@@ -25,12 +25,12 @@ const config: Config = {
   rateEventWindowMs: 60_000,
 };
 
-function harness() {
+function harness(cfg: Config = config) {
   const magicLinks = new InMemoryMagicLinkStore();
   const sessions = new InMemorySessionStore();
   const state = { sentUrl: "", published: [] as unknown[], shared: [] as unknown[], revoked: new Set<string>() };
   const app = buildApp({
-    config,
+    config: cfg,
     magicLinks,
     sessions,
     findInvite: async () => ({ workspace: "default" }),
@@ -654,5 +654,36 @@ describe("whose IP the rate limiter is actually counting", () => {
     expect((await from("9.9.9.1")).statusCode).toBe(200);
     expect((await from("9.9.9.1")).statusCode).toBe(429); // same client, limited
     expect((await from("9.9.9.2")).statusCode).toBe(200); // genuinely different client
+  });
+});
+
+describe("publishing a deck that carries its screenshots", () => {
+  // generate --assets puts images inline, so a walkthrough of a few phone captures is over the
+  // server's 1 MiB default. The publish route has its own, configured limit.
+  const big = (bytes: number) => ({
+    id: "d1", title: "T", slug: "walkthrough", workspace: "default", kind: "slide-deck",
+    slides: [{ id: "s1", layout: "image", asset: `data:image/png;base64,${"A".repeat(bytes)}`, alt: "a screen" }],
+  });
+  const auth = { authorization: `Bearer ${config.adminToken}` };
+
+  it("accepts a deck over 1 MiB up to the configured limit", async () => {
+    const { app, state } = harness({ ...config, publishMaxBytes: 4 * 1024 * 1024 });
+    const res = await app.inject({ method: "POST", url: "/admin/publish", payload: big(2 * 1024 * 1024), headers: auth });
+    expect(res.statusCode).toBe(201);
+    expect(state.published.length).toBe(1);
+  });
+
+  it("refuses a deck over the configured limit with 413", async () => {
+    const { app, state } = harness({ ...config, publishMaxBytes: 1024 * 1024 });
+    const res = await app.inject({ method: "POST", url: "/admin/publish", payload: big(2 * 1024 * 1024), headers: auth });
+    expect(res.statusCode).toBe(413);
+    expect(state.published.length).toBe(0);
+  });
+
+  it("checks the token before reading a large body, so the raised limit is never spent on a stranger", async () => {
+    const { app, state } = harness({ ...config, publishMaxBytes: 4 * 1024 * 1024 });
+    const res = await app.inject({ method: "POST", url: "/admin/publish", payload: big(2 * 1024 * 1024) });
+    expect(res.statusCode).toBe(401);
+    expect(state.published.length).toBe(0);
   });
 });

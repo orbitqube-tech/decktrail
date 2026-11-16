@@ -331,7 +331,7 @@ async function main(): Promise<void> {
       warn(`${loaded.assets.length} image(s) supplied from ${assetsDir}, ${(loaded.totalBytes / 1048576).toFixed(1)} MB`);
       if (loaded.skipped.length) warn(`  note: skipped ${loaded.skipped.join(", ")}: not an image type a deck can carry`);
       if (loaded.totalBytes > ASSET_WARN_BYTES)
-        warn("  note: every reader downloads these on every open; consider smaller images");
+        warn("  note: a portal refuses a deck this size unless its DT_PUBLISH_MAX_BYTES is raised; consider smaller images");
     }
 
     const deck = await generateDeck(source.text, resolved.voice, flag(rest, "--client"), {

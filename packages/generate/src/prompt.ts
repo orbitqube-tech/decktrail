@@ -49,7 +49,7 @@ export const FAITHFUL_BLOCK = `This is a FAITHFUL PORT of an existing, approved 
 
 /** Tell the model which images exist and how to place them, by name only. */
 export function renderAssets(assets: readonly PromptAsset[]): string {
-  const lines = assets.map((a) => `- ${ASSET_REF_PREFIX}${a.name}${a.alt ? `: ${a.alt.replace(/\s+/g, " ").trim()}` : ""}`);
+  const lines = assets.map((a) => `- ${ASSET_REF_PREFIX}${a.name.replace(/\s+/g, " ")}${a.alt ? `: ${a.alt.replace(/\s+/g, " ").trim()}` : ""}`);
   return `These images were supplied with the content. Place each one where the content refers to it,
 as an "image" slide whose "asset" is exactly the reference below, with "alt" describing it and an
 optional "caption". Use only these references, each at most once, and never any other asset:
@@ -178,7 +178,7 @@ Output the JSON now.`;
  * the invalid deck is itself too big for an argv-bound call.
  */
 export function buildRepairPrompt(invalid: string, errors: string): string {
-  return `The JSON below is a DeckTrail slide deck that failed schema validation. Fix it.
+  return `The JSON below is a DeckTrail slide deck that failed validation. Fix it.
 
 The validator's errors, each naming the path that is wrong:
 ---
@@ -187,7 +187,8 @@ ${errors}
 
 Change only what the errors point at. Keep every other slide, every heading, and all of the
 wording exactly as it is: the writing is correct and only the structure is not. Do not drop a
-slide to make an error go away, and do not add one.
+slide to make an error go away, and do not add one. The one exception: an "image" slide whose
+"asset:" reference was not supplied may be pointed at a supplied reference, or removed.
 
 Reminders on what the schema accepts:
 - TONE is exactly one of: "neutral", "red", "green", "note".

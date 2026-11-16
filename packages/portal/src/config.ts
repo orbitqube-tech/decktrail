@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DEFAULT_PUBLISH_MAX_BYTES } from "@decktrail/ir";
 
 /**
  * Values that have ever appeared as a placeholder in this repository's .env.example.
@@ -76,6 +77,12 @@ const ConfigSchema = z.object({
   telemetryEndpoint: z.string().default("https://decktrail.com/telemetry"),
   /** How often an opted-in instance reports. Weekly by default. */
   telemetryIntervalMs: z.number().int().default(7 * 24 * 60 * 60 * 1000),
+  /**
+   * The largest artifact `/admin/publish` accepts, in bytes. A deck carries its screenshots inline
+   * (generate --assets), and the server's 1 MiB default refused a walkthrough of a few phone
+   * captures with a bare 413. Only the publish route is raised; every other route keeps the default.
+   */
+  publishMaxBytes: z.number().int().positive().default(DEFAULT_PUBLISH_MAX_BYTES),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -110,5 +117,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     trustProxyHeader: env["DT_TRUST_PROXY_HEADER"] === "true" ? true : undefined,
     telemetryEndpoint: env["DT_TELEMETRY_ENDPOINT"],
     telemetryIntervalMs: num(env["DT_TELEMETRY_INTERVAL_MS"]),
+    publishMaxBytes: num(env["DT_PUBLISH_MAX_BYTES"]),
   });
 }

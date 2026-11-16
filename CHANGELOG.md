@@ -33,6 +33,13 @@ Dates are the day the tag was pushed.
 - **Nothing is drawn on top of the made-with line.** On a document or a pricing tool the brand mark
   and the made-with line shared the bottom-left corner, and the pricing tool's "Press E to edit"
   hint sat on both. Made-with moves to the right when a mark is shown, and the hint sits above it.
+- **A deck with screenshots can be published.** `/admin/publish` took the server's 1 MiB default,
+  so a walkthrough of a few phone captures was refused with a bare 413. It now accepts up to
+  `DT_PUBLISH_MAX_BYTES` (16 MiB by default), checks the admin token before reading the body, and
+  the CLI warns when the supplied images would take a deck past that default.
+- **`generate --assets` is stricter about what the model writes.** An image used twice, or a file
+  name that would break a line of the prompt, is refused; a repair may drop or repoint an image the
+  author never supplied; and a malformed `assets.json` is reported by name.
 
 ## 0.3.0 (2026-08-17)
 

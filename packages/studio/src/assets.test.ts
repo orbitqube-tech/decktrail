@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadAssets, ASSET_MANIFEST } from "./assets.js";
@@ -30,6 +30,19 @@ describe("loading images for generate --assets", () => {
     const { assets, skipped } = loadAssets(dir);
     expect(assets.map((a) => a.name)).toEqual(["a.webp"]);
     expect(skipped).toEqual(["notes.txt"]);
+  });
+
+  it("names the manifest when it is not valid JSON", () => {
+    writeFileSync(join(dir, ASSET_MANIFEST), "{ not json");
+    expect(() => loadAssets(dir)).toThrow(/assets\.json is not valid JSON/);
+  });
+
+  it("skips a folder named like an image", () => {
+    mkdirSync(join(dir, "shots.png"));
+    writeFileSync(join(dir, "real.png"), "x");
+    const { assets, skipped } = loadAssets(dir);
+    expect(assets.map((a) => a.name)).toEqual(["real.png"]);
+    expect(skipped).toEqual(["shots.png"]);
   });
 
   it("refuses a path that is not a folder", () => {

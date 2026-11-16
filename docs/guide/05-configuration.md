@@ -123,6 +123,7 @@ not sign for you. A real mail service already signs; leave these unset there.
 | `DT_EMAIL_COOLDOWN_MS` | `60000` | Minimum gap between links to one address. Stops mail-bombing. |
 | `DT_RATELIMIT_EVENT_MAX` | `600` | Beacon events per IP per window. Generous, so real reading is never throttled. |
 | `DT_RATELIMIT_EVENT_WINDOW_MS` | `60000` | |
+| `DT_PUBLISH_MAX_BYTES` | `16777216` (16 MiB) | The largest artifact `/admin/publish` accepts. A deck carries its screenshots inline, so a walkthrough is larger than the server's 1 MiB default for every other route. The token is checked before the body is read, so only an authenticated publisher can use this headroom. |
 
 > **`DT_TRUST_PROXY_HEADER` is off, and should stay off unless you are genuinely behind
 > Cloudflare** or another proxy that sets `CF-Connecting-IP` **and strips a client-supplied

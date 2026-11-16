@@ -521,3 +521,10 @@ export const WatermarkConfig = z.object({
   tiling: z.record(z.string(), z.unknown()),
 });
 export type WatermarkConfig = z.infer<typeof WatermarkConfig>;
+
+/**
+ * The largest artifact a portal accepts on publish by default, in bytes (16 MiB). One number, read
+ * by the portal (DT_PUBLISH_MAX_BYTES overrides it there) and by the CLI, which warns before a
+ * deck that carries its screenshots would be refused.
+ */
+export const DEFAULT_PUBLISH_MAX_BYTES = 16 * 1024 * 1024;

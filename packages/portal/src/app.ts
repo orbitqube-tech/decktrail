@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { Deck, DocumentArtifact, Tool, Pack, Theme, Voice } from "@decktrail/ir";
 import type { Config } from "./config.js";
 import type { MagicLinkStore, SessionStore } from "./auth/stores.js";
@@ -485,10 +485,15 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   });
 
   // Publish an artifact IR as a new immutable version (D10). Admin only.
-  app.post("/admin/publish", async (request, reply) => {
+  // Its own body limit: a deck that carries its screenshots is legitimately larger than the
+  // server-wide default. The token is checked in onRequest, before the body is read, so the
+  // raised limit is only ever spent on an authenticated publisher, never on an anonymous upload.
+  const publishAuth = async (request: FastifyRequest, reply: FastifyReply) => {
     const auth = adminAuth(request, config);
     if (auth === "disabled") return reply.code(503).send({ error: "admin disabled" });
     if (auth === "unauthorized") return reply.code(401).send({ error: "unauthorized" });
+  };
+  app.post("/admin/publish", { bodyLimit: config.publishMaxBytes, onRequest: publishAuth }, async (request, reply) => {
     if (!deps.publisher) return reply.code(503).send({ error: "publishing not configured" });
     // Body may be the raw IR, or an envelope { artifact, theme } carrying a per-deck theme.
     const raw = request.body;
