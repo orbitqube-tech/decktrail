@@ -9,7 +9,10 @@ come back to. Before 1.0 the minor number carries features and the patch number 
 
 Dates are the day the tag was pushed.
 
-## Unreleased
+## 0.4.0 (2026-11-16)
+
+The release that ports a document a client has already read, screenshots and all, instead of
+rewriting it.
 
 ### Writing a deck
 
