@@ -99,8 +99,11 @@ table.st tfoot td{font-weight:800;color:var(--heading)}
 .bar .track{height:16px;border-radius:8px;background:var(--s-high);overflow:hidden}
 .bar .fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
 .bar .val{color:var(--muted);font-size:calc(13px * var(--scale));text-align:right}
-figure.shot{margin-top:12px}
-figure.shot img{max-width:100%;border-radius:12px;display:block}
+/* A screenshot is fitted, never cropped: a portrait phone capture used to render at its full
+   height, run off the top and bottom of the slide and push its own caption out of view. It is
+   capped to the viewport and centred, keeping its aspect ratio, so the caption stays on screen. */
+figure.shot{margin-top:12px;display:flex;flex-direction:column;align-items:center}
+figure.shot img{max-width:100%;max-height:66vh;width:auto;height:auto;object-fit:contain;border-radius:12px;display:block}
 figure.shot figcaption,.figcap{color:var(--muted);font-size:calc(13px * var(--scale));margin-top:8px}
 .meta{margin-top:22px;color:var(--muted);font-size:calc(14px * var(--scale));display:flex;flex-direction:column;gap:4px}
 /* A swimlane is a grid of cards, not a bordered table. The table read as a spreadsheet: hairline

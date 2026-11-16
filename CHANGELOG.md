@@ -25,6 +25,15 @@ Dates are the day the tag was pushed.
   never pass through the model, and a reference to an image that was not supplied goes back for
   repair rather than into the deck.
 
+### Fixes
+
+- **A portrait screenshot fits its slide.** A phone capture rendered at full height, ran off the
+  top and bottom of the slide and hid its own caption. Screenshots are now capped to the viewport
+  and centred, keeping their shape, on desktop and phone alike.
+- **Nothing is drawn on top of the made-with line.** On a document or a pricing tool the brand mark
+  and the made-with line shared the bottom-left corner, and the pricing tool's "Press E to edit"
+  hint sat on both. Made-with moves to the right when a mark is shown, and the hint sits above it.
+
 ## 0.3.0 (2026-08-17)
 
 The release that lets an owner act on a share and see what a viewer actually did to a protected

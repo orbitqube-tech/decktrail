@@ -16,6 +16,9 @@ export const logoCss = `
 .dtcover .name{font-size:calc(24px * var(--scale));font-weight:800;color:var(--heading);letter-spacing:.5px}
 .dtbrand{position:fixed;left:18px;bottom:16px;z-index:19;display:flex;align-items:center}
 .dtbrand.up{bottom:62px}
+/* A document or tool has no bar, so the mark and the made-with line both wanted the bottom-left
+   corner and were drawn on top of each other. Where a mark is shown, made-with takes the right. */
+.dtbrand + .madewith{left:auto;right:26px}
 .dtbrand img{height:22px;width:auto;display:block;opacity:.9}
 .dtbarmark{height:22px;width:auto;display:block;opacity:.85;flex:none}
 `;
